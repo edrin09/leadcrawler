@@ -12,7 +12,7 @@ const path = require('path');
   });
   const page = await context.newPage();
 
-  const outputDir = path.join(__dirname, 'output');
+  const outputDir = path.join(__dirname, '../output');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -41,7 +41,7 @@ const path = require('path');
           }
         }
       }
-    } catch (e) { }
+    } catch (e) {}
   };
 
   const waitForAndCloseLoginModal = async () => {
@@ -88,14 +88,11 @@ const path = require('path');
     return '';
   };
 
-  const collectData = async () => {
+  const collectPageData = async () => {
     const data = [];
     try {
-      console.log('开始采集数据...');
       await page.waitForTimeout(2000);
-
       await scrollToLoadImages();
-      await page.screenshot({ path: 'debug_list.png' });
 
       const itemSelectors = [
         '[class*="feeds-item-wrap"]',
@@ -113,11 +110,9 @@ const path = require('path');
       for (const sel of itemSelectors) {
         const found = page.locator(sel);
         const count = await found.count();
-        console.log(`选择器 ${sel} 找到 ${count} 个`);
         if (count > 5) {
           items = found;
           usedSelector = sel;
-          console.log(`使用选择器 ${sel} 找到 ${count} 个元素`);
           break;
         }
       }
@@ -211,21 +206,119 @@ const path = require('path');
     return data;
   };
 
+  const loadExistingUrls = (filePath) => {
+    const existingUrls = new Set();
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split('\n');
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line) {
+            const parts = line.split('"');
+            if (parts.length >= 9) {
+              const url = parts[7];
+              if (url) {
+                existingUrls.add(url);
+              }
+            }
+          }
+        }
+        console.log(`已加载 ${existingUrls.size} 条现有数据`);
+      }
+    } catch (e) {
+      console.log('读取现有数据出错:', e.message);
+    }
+    return existingUrls;
+  };
+
   const saveData = (data, filename) => {
     try {
       const filePath = path.join(outputDir, filename);
+      const existingUrls = loadExistingUrls(filePath);
+      
+      const newData = data.filter(item => !existingUrls.has(item.detailUrl));
+      console.log(`过滤后新增 ${newData.length} 条数据`);
+      
+      if (newData.length === 0) {
+        console.log('无新数据需要保存');
+        return 0;
+      }
+      
       const csvHeader = '标题,价格,区县,详情地址,图片地址\n';
-      const csvData = data.map(item =>
+      const csvData = newData.map(item =>
         `"${item.title.replace(/"/g, '""')}","${item.price.replace(/"/g, '""')}","${item.district.replace(/"/g, '""')}","${item.detailUrl.replace(/"/g, '""')}","${item.imageUrl.replace(/"/g, '""')}"`
       ).join('\n');
 
-      fs.writeFileSync(filePath, '\ufeff' + csvHeader + csvData, 'utf8');
-      console.log(`数据已保存到: ${filePath}`);
-      return filePath;
+      if (fs.existsSync(filePath)) {
+        fs.appendFileSync(filePath, csvData + '\n', 'utf8');
+        console.log(`数据已追加到: ${filePath}`);
+      } else {
+        fs.writeFileSync(filePath, '\ufeff' + csvHeader + csvData, 'utf8');
+        console.log(`数据已保存到: ${filePath}`);
+      }
+      
+      return newData.length;
     } catch (e) {
       console.log('保存数据出错:', e.message);
-      return null;
+      return 0;
     }
+  };
+
+  const clickNextPage = async () => {
+    console.log('查找分页容器和下一页按钮...');
+    
+    const paginationSelectors = [
+      '.search-footer-page-container--e02TuanR',
+      '.search-pagination-container--nnaHMrYo',
+      '.pagination',
+      '[class*="pagination"]'
+    ];
+
+    for (const pagSel of paginationSelectors) {
+      const paginationContainer = page.locator(pagSel).first();
+      if (await paginationContainer.isVisible({ timeout: 2000 }).catch(() => false)) {
+        console.log(`找到分页容器: ${pagSel}`);
+        
+        await paginationContainer.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(500);
+        
+        const nextPageSelectors = [
+          '.search-pagination-arrow-container--lt2kCP6J:not([disabled])',
+          '.search-pagination-arrow-right--CKU78u4z',
+          'text=">"',
+          'a:has-text(">")',
+          'button:has-text(">")'
+        ];
+
+        for (const sel of nextPageSelectors) {
+          try {
+            const el = paginationContainer.locator(sel).last();
+            if (await el.isVisible({ timeout: 1000 }).catch(() => false)) {
+              console.log(`找到下一页按钮: ${sel}`);
+              await el.click({ force: true });
+              return true;
+            }
+          } catch (e) {
+            console.log(`选择器 ${sel} 错误: ${e.message}`);
+          }
+        }
+      }
+    }
+    
+    console.log('尝试直接点击页码2...');
+    try {
+      const page2Btn = page.locator('.search-pagination-page-box--AbqmJFFp').nth(1);
+      if (await page2Btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+        console.log('找到页码2按钮');
+        await page2Btn.click({ force: true });
+        return true;
+      }
+    } catch (e) {
+      console.log('点击页码2错误:', e.message);
+    }
+    
+    return false;
   };
 
   try {
@@ -299,9 +392,6 @@ const path = require('path');
       await areaBtn.click({ force: true, timeout: 5000 });
       await page.waitForTimeout(2000);
 
-      await page.screenshot({ path: 'area_popup.png' });
-      console.log('区域弹窗已打开');
-
       console.log('步骤4: 选择陕西');
       await page.waitForTimeout(1000);
 
@@ -374,19 +464,46 @@ const path = require('path');
 
       console.log('');
       console.log('========================================');
-      console.log('开始数据采集...');
+      console.log('开始分页采集数据...');
       console.log('========================================');
 
-      const collectedData = await collectData();
+      const filename = 'goofish_output.csv';
+      let pageNumber = 1;
+      let totalSaved = 0;
 
-      if (collectedData.length > 0) {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `店铺转让_${timestamp}.csv`;
-        saveData(collectedData, filename);
-        console.log(`成功采集 ${collectedData.length} 条数据`);
-      } else {
-        console.log('未采集到任何数据');
+      while (true) {
+        console.log(`\n===== 第 ${pageNumber} 页 =====`);
+        const pageData = await collectPageData();
+        
+        if (pageData.length === 0) {
+          console.log('本页无数据，停止采集');
+          break;
+        }
+
+        console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
+        
+        const savedCount = saveData(pageData, filename);
+        totalSaved += savedCount;
+        
+        if (savedCount === 0) {
+          console.log('本页无新数据，停止采集');
+          break;
+        }
+
+        const hasNextPage = await clickNextPage();
+        if (!hasNextPage) {
+          console.log('未找到下一页按钮，采集完成');
+          break;
+        }
+
+        const randomWait = Math.floor(Math.random() * 8) + 3;
+        console.log(`等待 ${randomWait} 秒后采集下一页...`);
+        await page.waitForTimeout(randomWait * 1000);
+        
+        pageNumber++;
       }
+
+      console.log(`\n成功采集并保存 ${totalSaved} 条新数据（共 ${pageNumber} 页）`);
       console.log('========================================');
 
     } else {
