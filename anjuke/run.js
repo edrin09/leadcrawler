@@ -190,6 +190,11 @@ const path = require('path');
       const savedCount = saveData(pageData, filename);
       totalSaved += savedCount;
 
+      if (savedCount === 0) {
+        console.log('无新数据，停止采集');
+        break;
+      }
+
       const hasNextPage = await clickNextPage();
       if (!hasNextPage) {
         console.log('已到达最后一页，采集完成');
