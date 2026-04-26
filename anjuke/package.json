@@ -1,0 +1,12 @@
+{
+  "name": "anjuke-crawler",
+  "version": "1.0.0",
+  "description": "安居客爬虫脚本",
+  "main": "anjuke.js",
+  "scripts": {
+    "start": "node anjuke.js"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0"
+  }
+}

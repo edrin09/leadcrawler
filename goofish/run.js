@@ -248,7 +248,7 @@ const path = require('path');
           let price = '';
           const priceMatch = textContent.match(/¥[\d,]+|￥[\d,]+|\d+元|\d+\.\d{2}/);
           if (priceMatch) {
-            price = priceMatch[0].replace(/[^\d.]/g, '');
+            price = priceMatch[0];
           }
 
           const district = extractDistrict(textContent);
