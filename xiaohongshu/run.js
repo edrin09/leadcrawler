@@ -174,73 +174,238 @@ function sleep(ms) {
       // 等待页面稳定
       await sleep(randomDelay(1500, 3000));
 
-      const container = page.locator('.feeds-container');
-      if (!await container.isVisible({ timeout: 5000 })) {
-        console.log('未找到 feeds-container 容器');
+      let items;
+      let count = 0;
+
+      // 尝试多种容器选择器
+      const containerSelectors = [
+        '.feeds-container',
+        '.note-list',
+        '.search-result',
+        '.content-container',
+        '.main-content'
+      ];
+
+      let containerFound = false;
+      for (const selector of containerSelectors) {
+        try {
+          const container = page.locator(selector);
+          if (await container.isVisible({ timeout: 5000 })) {
+            items = container.locator('section.note-item');
+            count = await items.count();
+            console.log(`在 ${selector} 中找到 ${count} 个列表项`);
+            containerFound = true;
+            break;
+          }
+        } catch (e) {
+          // 继续尝试下一个选择器
+        }
+      }
+
+      // 如果没有找到容器，直接查找note-item
+      if (!containerFound) {
+        try {
+          items = page.locator('section.note-item');
+          count = await items.count();
+          console.log(`直接找到 ${count} 个列表项`);
+          containerFound = count > 0;
+        } catch (e) {
+          console.log('未找到任何列表项');
+          return [];
+        }
+      }
+
+      if (!containerFound || count === 0) {
+        console.log('未找到任何列表项');
         return [];
       }
 
-      const items = container.locator('section.note-item');
-      const count = await items.count();
-      console.log(`共找到 ${count} 个列表项`);
-
       for (let i = 0; i < count; i++) {
         try {
-          // 模拟人类行为：滚动到当前元素
-          const item = items.nth(i);
-          await item.scrollIntoViewIfNeeded({ behavior: 'smooth' });
-          await sleep(randomDelay(300, 800));
+          // 重新获取元素，避免元素分离
+          const currentItems = page.locator('section.note-item');
+          const currentCount = await currentItems.count();
 
-          // 模拟鼠标悬停
-          await item.hover({ force: true });
-          await sleep(randomDelay(200, 500));
+          if (i >= currentCount) {
+            console.log(`采集第 ${i + 1} 条失败: 元素已不存在`);
+            continue;
+          }
 
-          const itemHtml = await item.evaluate(el => el.outerHTML);
+          const item = currentItems.nth(i);
 
+          // 模拟人类行为：滚动到当前元素（添加超时处理）
+          try {
+            await item.scrollIntoViewIfNeeded({ behavior: 'smooth', timeout: 10000 });
+            await sleep(randomDelay(300, 800));
+          } catch (e) {
+            console.log(`滚动到元素失败: ${e.message}`);
+            // 继续执行，不中断采集
+          }
+
+          // 模拟鼠标悬停（添加超时处理）
+          try {
+            await item.hover({ force: true, timeout: 5000 });
+            await sleep(randomDelay(200, 500));
+          } catch (e) {
+            console.log(`悬停元素失败: ${e.message}`);
+            // 继续执行，不中断采集
+          }
+
+          // 使用更精确的CSS选择器提取数据
           let detailUrl = '';
-          const linkMatch = itemHtml.match(/href="(\/explore\/[^"]*)"/);
-          if (linkMatch && linkMatch[1]) {
-            detailUrl = 'https://www.xiaohongshu.com' + linkMatch[1];
+          try {
+            // 精确查找带有特定class的a标签
+            const coverLink = item.locator('a.cover.mask.ld');
+            if (await coverLink.isVisible({ timeout: 5000 })) {
+              const href = await coverLink.getAttribute('href');
+              if (href) {
+                detailUrl = href.startsWith('http') ? href : 'https://www.xiaohongshu.com' + href;
+              }
+            }
+
+            // 如果没找到，尝试其他可能的链接
+            if (!detailUrl) {
+              const linkElements = item.locator('a[href]');
+              const count = await linkElements.count();
+              for (let j = 0; j < count; j++) {
+                const linkElement = linkElements.nth(j);
+                const href = await linkElement.getAttribute('href');
+                if (href && (href.startsWith('/explore/') || href.startsWith('/note/'))) {
+                  detailUrl = href.startsWith('http') ? href : 'https://www.xiaohongshu.com' + href;
+                  break;
+                }
+              }
+            }
+          } catch (e) {
+            console.log(`提取链接失败: ${e.message}`);
           }
 
           let title = '';
-          const titleMatch = itemHtml.match(/title="([^"]*)"/);
-          if (titleMatch && titleMatch[1]) {
-            title = titleMatch[1];
+          try {
+            // 查找a标签下的span[data-v-51ec0135]
+            const titleElement = item.locator('a span[data-v-51ec0135]');
+            if (await titleElement.isVisible({ timeout: 5000 })) {
+              title = await titleElement.textContent();
+              if (title) {
+                title = title.trim();
+              }
+            }
+
+            // 如果没找到，尝试其他可能的标题元素
+            if (!title) {
+              const altTitleElements = [
+                item.locator('span.title'),
+                item.locator('h3'),
+                item.locator('p')
+              ];
+              for (const altElement of altTitleElements) {
+                if (await altElement.isVisible({ timeout: 3000 })) {
+                  title = await altElement.textContent();
+                  if (title && title.trim()) {
+                    title = title.trim();
+                    break;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.log(`提取标题失败: ${e.message}`);
           }
 
           let imageUrl = '';
-          const imgPatterns = [
-            /data-src="([^"]*)"/,
-            /src="(https?:\/\/[^"]*(?:jpg|jpeg|png|gif|webp))"/,
-            /background-image:\s*url\("([^"]*)"\)/
-          ];
-          for (const pattern of imgPatterns) {
-            const match = itemHtml.match(pattern);
-            if (match && match[1]) {
-              imageUrl = match[1];
-              break;
+          try {
+            // 查找带有特定class的img标签
+            const imgElement = item.locator('img[data-v-c091d9e8]');
+            if (await imgElement.isVisible({ timeout: 5000 })) {
+              const src = await imgElement.getAttribute('src');
+              const dataSrc = await imgElement.getAttribute('data-src');
+              const dataOriginal = await imgElement.getAttribute('data-original');
+
+              if (src && src.startsWith('http')) {
+                imageUrl = src;
+              } else if (dataSrc && dataSrc.startsWith('http')) {
+                imageUrl = dataSrc;
+              } else if (dataOriginal && dataOriginal.startsWith('http')) {
+                imageUrl = dataOriginal;
+              }
             }
+
+            // 如果没找到，尝试其他可能的图片元素
+            if (!imageUrl) {
+              const altImgElement = item.locator('img').first();
+              if (await altImgElement.isVisible({ timeout: 3000 })) {
+                const src = await altImgElement.getAttribute('src');
+                if (src && src.startsWith('http')) {
+                  imageUrl = src;
+                }
+              }
+            }
+          } catch (e) {
+            console.log(`提取图片失败: ${e.message}`);
           }
 
+          let price = '';
+          try {
+            // 尝试提取价格信息
+            const priceElements = [
+              item.locator('[class*="price"]'),
+              item.locator('[class*="money"]'),
+              item.locator('span.price'),
+              item.locator('div.price')
+            ];
 
+            for (const priceElement of priceElements) {
+              if (await priceElement.isVisible()) {
+                price = await priceElement.textContent();
+                if (price && price.trim()) {
+                  price = price.trim();
+                  break;
+                }
+              }
+            }
+          } catch (e) {
+            console.log(`提取价格失败: ${e.message}`);
+          }
+
+          let district = '';
+
+          // 添加调试信息
           if (detailUrl) {
             data.push({
               title: title || '',
               district: district || '',
+              price: price || '',
               imageUrl: imageUrl || '',
               detailUrl: detailUrl || '',
               source: 'xiaohongshu',
             });
             const showTitle = title ? title.substring(0, 30) : '(无标题)';
-            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle}`);
+            const showPrice = price ? price : '(无价格)';
+            const showImage = imageUrl ? '有图片' : '无图片';
+            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle} | ${showPrice} | ${showImage} | ${detailUrl}`);
+          } else {
+            console.log(`采集第 ${i + 1}/${count} 条: 未找到链接`);
           }
 
-          // 每采集几条数据后添加随机延迟
+          // 每采集几条数据后添加随机延迟（仿人工操作）
           if ((i + 1) % 3 === 0) {
-            const batchDelay = randomDelay(1000, 2000);
+            const batchDelay = randomDelay(2000, 4000);
             console.log(`批次采集完成，等待 ${batchDelay}ms...`);
             await sleep(batchDelay);
+          }
+
+          // 随机添加小延迟，模拟人类操作
+          if (Math.random() > 0.7) {
+            const smallDelay = randomDelay(500, 1500);
+            await sleep(smallDelay);
+          }
+
+          // 每采集20条数据就写入CSV文件
+          if (data.length >= 20) {
+            console.log(`\n========== 累计达到 ${data.length} 条，开始保存 ==========`);
+            const savedCount = saveData(data);
+            console.log(`成功保存 ${savedCount} 条新数据`);
+            data.length = 0; // 清空已保存的数据
           }
         } catch (e) {
           console.log(`采集第 ${i + 1} 条失败: ${e.message}`);
@@ -350,8 +515,42 @@ function sleep(ms) {
     await waitForAndHandleLoginModal();
 
     console.log('步骤3: 等待页面加载完成');
-    await page.waitForSelector('.feeds-container', { timeout: 30000 });
-    console.log('feeds-container 已找到');
+    try {
+      await page.waitForSelector('.feeds-container', { timeout: 30000 });
+      console.log('feeds-container 已找到');
+    } catch (e) {
+      console.log('未找到 feeds-container，尝试查找其他可能的容器...');
+      await page.screenshot({ path: 'xiaohongshu_page_structure.png', fullPage: true });
+      console.log('已保存页面结构截图: xiaohongshu_page_structure.png');
+
+      // 尝试查找其他可能的容器
+      const alternativeSelectors = [
+        '.note-list',
+        '.search-result',
+        '.content-container',
+        '.main-content',
+        'section.note-item'
+      ];
+
+      let containerFound = false;
+      for (const selector of alternativeSelectors) {
+        try {
+          await page.waitForSelector(selector, { timeout: 5000 });
+          console.log(`找到替代容器: ${selector}`);
+          containerFound = true;
+          break;
+        } catch (e) {
+          // 继续尝试下一个选择器
+        }
+      }
+
+      if (!containerFound) {
+        console.log('未找到任何容器元素，可能页面结构已变化');
+        const pageContent = await page.content();
+        fs.writeFileSync('xiaohongshu_page_content.html', pageContent);
+        console.log('已保存页面内容: xiaohongshu_page_content.html');
+      }
+    }
 
     await waitForAndHandleLoginModal();
 
@@ -390,7 +589,7 @@ function sleep(ms) {
         // 每20条数据保存一次
         if (totalData.length >= batchSize) {
           console.log(`\n========== 累计达到 ${totalData.length} 条，开始保存 ==========`);
-          const savedCount = saveData(totalData, 'xiaohongshu.csv');
+          const savedCount = saveData(totalData);
           console.log(`成功保存 ${savedCount} 条新数据`);
           totalData = []; // 清空已保存的数据
         }
