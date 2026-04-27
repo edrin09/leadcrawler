@@ -11,7 +11,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-(async () => {
+async function runXiaohongshuCrawler() {
   const browser = await chromium.launch({
     headless: false,
     args: [
@@ -21,7 +21,7 @@ function sleep(ms) {
       '--disable-setuid-sandbox'
     ]
   });
-  const storageStatePath = path.join(__dirname, 'storageState.json');
+  const storageStatePath = path.join(__dirname, '../storage/xiaohongshu_storageState.json');
   const context = await browser.newContext({
     viewport: null,
     args: ['--start-maximized'],
@@ -119,53 +119,6 @@ function sleep(ms) {
       console.log('登录弹窗检测异常:', e.message);
     }
     return false;
-  };
-
-  const parsePublishTime = (timeText) => {
-    const now = new Date();
-    const timeMatch = timeText.match(/(\d+)天前|(\d+)小时前|(\d+)分钟前|刚刚|今天|昨天|(\d{4}-\d{2}-\d{2})/);
-
-    if (timeMatch) {
-      if (timeMatch[1]) {
-        const days = parseInt(timeMatch[1]);
-        if (!isNaN(days)) {
-          return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-        }
-      } else if (timeMatch[2]) {
-        const hours = parseInt(timeMatch[2]);
-        if (!isNaN(hours)) {
-          return new Date(now.getTime() - hours * 60 * 60 * 1000);
-        }
-      } else if (timeMatch[3]) {
-        const minutes = parseInt(timeMatch[3]);
-        if (!isNaN(minutes)) {
-          return new Date(now.getTime() - minutes * 60 * 1000);
-        }
-      } else if (timeMatch[4]) {
-        const date = new Date(timeMatch[4]);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
-      } else if (timeMatch[0] === '今天' || timeMatch[0] === '刚刚') {
-        return now;
-      } else if (timeMatch[0] === '昨天') {
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      }
-    }
-    return now;
-  };
-
-  const formatDateTime = (date) => {
-    if (!date || isNaN(date.getTime())) {
-      return '';
-    }
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const collectPageData = async () => {
@@ -633,9 +586,17 @@ function sleep(ms) {
 
   } catch (e) {
     console.log('执行出错:', e.message);
-    await page.screenshot({ path: 'xiaohongshu_error.png' });
-    console.log('已保存错误截图: xiaohongshu_error.png');
+    if (page) {
+      await page.screenshot({ path: 'xiaohongshu_error.png' });
+      console.log('已保存错误截图: xiaohongshu_error.png');
+    }
+  } finally {
+    console.log('关闭浏览器...');
+    if (browser) {
+      await browser.close();
+    }
+    console.log('浏览器已关闭');
   }
+}
 
-  await browser.close();
-})();
+module.exports = runXiaohongshuCrawler;

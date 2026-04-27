@@ -3,18 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const { saveData } = require('../utils/saveCsv');
 
-(async () => {
+async function runAnjukeCrawler() {
   const browser = await chromium.launch({ headless: false });
+  const storageStatePath = path.join(__dirname, '../storage/anjuke_storageState.json');
   const context = await browser.newContext({
     viewport: null,
-    args: ['--start-maximized']
+    args: ['--start-maximized'],
+    storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined
   });
   const page = await context.newPage();
-
-  const outputDir = path.join(__dirname, '../output');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
 
   const collectPageData = async () => {
     const data = [];
@@ -157,10 +154,16 @@ const { saveData } = require('../utils/saveCsv');
 
   } catch (error) {
     console.error('执行出错:', error.message);
-    await page.screenshot({ path: 'anjuke_error.png' });
+    if (page) {
+      await page.screenshot({ path: 'anjuke_error.png' });
+    }
+  } finally {
+    console.log('关闭浏览器...');
+    if (browser) {
+      await browser.close();
+    }
+    console.log('浏览器已关闭');
   }
+}
 
-  console.log('关闭浏览器...');
-  await browser.close();
-  console.log('浏览器已关闭');
-})();
+module.exports = runAnjukeCrawler;

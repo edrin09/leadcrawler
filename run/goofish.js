@@ -3,9 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const { saveData } = require('../utils/saveCsv');
 
-(async () => {
+async function runGoofishCrawler() {
   const browser = await chromium.launch({ headless: false });
-  const storageStatePath = path.join(__dirname, 'storageState.json');
+  const storageStatePath = path.join(__dirname, '../storage/goofish_storageState.json');
   const context = await browser.newContext({
     viewport: null,
     args: ['--start-maximized'],
@@ -14,11 +14,6 @@ const { saveData } = require('../utils/saveCsv');
     storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined
   });
   const page = await context.newPage();
-
-  const outputDir = path.join(__dirname, '../output');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
 
   const closePopups = async () => {
     try {
@@ -584,4 +579,6 @@ const { saveData } = require('../utils/saveCsv');
   console.log('关闭浏览器...');
   await browser.close();
   console.log('浏览器已关闭');
-})();
+}
+
+module.exports = runGoofishCrawler;
