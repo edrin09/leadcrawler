@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { saveData } = require('../utils/saveCsv');
 
 (async () => {
   const browser = await chromium.launch({ headless: false });
@@ -95,51 +96,6 @@ const path = require('path');
     }
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(1000);
-  };
-
-  const parsePublishTime = (timeText) => {
-    const now = new Date();
-    const timeMatch = timeText.match(/(\d+)小时前|(\d+)分钟前|(\d+)秒前|刚刚|(\d{4}-\d{2}-\d{2})/);
-
-    if (timeMatch) {
-      if (timeMatch[1]) { // 小时前
-        const hours = parseInt(timeMatch[1]);
-        if (!isNaN(hours)) {
-          return new Date(now.getTime() - hours * 60 * 60 * 1000);
-        }
-      } else if (timeMatch[2]) { // 分钟前
-        const minutes = parseInt(timeMatch[2]);
-        if (!isNaN(minutes)) {
-          return new Date(now.getTime() - minutes * 60 * 1000);
-        }
-      } else if (timeMatch[3]) { // 秒前
-        const seconds = parseInt(timeMatch[3]);
-        if (!isNaN(seconds)) {
-          return new Date(now.getTime() - seconds * 1000);
-        }
-      } else if (timeMatch[4]) { // 具体日期
-        const date = new Date(timeMatch[4]);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
-      } else if (timeMatch[0] === '刚刚') {
-        return now;
-      }
-    }
-    return now;
-  };
-
-  const formatDateTime = (date) => {
-    if (!date || isNaN(date.getTime())) {
-      return '';
-    }
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
   const extractDistrict = (textContent) => {
@@ -253,31 +209,17 @@ const path = require('path');
 
           const district = extractDistrict(textContent);
 
-          // 提取发布时间
-          let publishTime = '';
-          console.log(`完整文本内容: ${textContent.substring(0, 100)}...`);
-          const timeMatch = textContent.match(/(\d+小时前|\d+分钟前|\d+秒前|刚刚|\d{4}-\d{2}-\d{2})/);
-          console.log(`时间匹配结果: ${JSON.stringify(timeMatch)}`);
-          if (timeMatch) {
-            console.log(`匹配到时间: ${timeMatch[0]}`);
-            const timeDate = parsePublishTime(timeMatch[0]);
-            publishTime = formatDateTime(timeDate);
-            console.log(`转换后时间: ${publishTime}`);
-          } else {
-            console.log(`未匹配到时间格式`);
-          }
-
           if (detailUrl || imageUrl) {
             data.push({
               title: title || '',
-              price: price || '',
               district: district || '',
-              publishTime: publishTime || '',
+              price: price || '',
+              imageUrl: imageUrl || '',
               detailUrl: detailUrl || '',
-              imageUrl: imageUrl || ''
+              source: 'goofish'
             });
             const showTitle = title ? title.substring(0, 20) : '(无标题)';
-            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle} | ${price} | ${district} | ${publishTime}`);
+            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle} | ${price} | ${district}}`);
             if (i < 3) {
               console.log(`  详情: ${detailUrl.substring(0, 60)}...`);
               console.log(`  图片: ${imageUrl.substring(0, 60)}...`);
@@ -293,64 +235,7 @@ const path = require('path');
     return data;
   };
 
-  const loadExistingUrls = (filePath) => {
-    const existingUrls = new Set();
-    try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const lines = content.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line) {
-            const parts = line.split('"');
-            if (parts.length >= 11) {
-              const url = parts[9];
-              if (url) {
-                existingUrls.add(url);
-              }
-            }
-          }
-        }
-        console.log(`已加载 ${existingUrls.size} 条现有数据`);
-      }
-    } catch (e) {
-      console.log('读取现有数据出错:', e.message);
-    }
-    return existingUrls;
-  };
 
-  const saveData = (data, filename) => {
-    try {
-      const filePath = path.join(outputDir, filename);
-      const existingUrls = loadExistingUrls(filePath);
-
-      const newData = data.filter(item => !existingUrls.has(item.detailUrl));
-      console.log(`过滤后新增 ${newData.length} 条数据`);
-
-      if (newData.length === 0) {
-        console.log('无新数据需要保存');
-        return 0;
-      }
-
-      const csvHeader = '标题,价格,区县,发布时间,详情地址,图片地址\n';
-      const csvData = newData.map(item =>
-        `"${item.title.replace(/"/g, '""')}","${item.price.replace(/"/g, '""')}","${item.district.replace(/"/g, '""')}","${item.publishTime.replace(/"/g, '""')}","${item.detailUrl.replace(/"/g, '""')}","${item.imageUrl.replace(/"/g, '""')}"`
-      ).join('\n');
-
-      if (fs.existsSync(filePath)) {
-        fs.appendFileSync(filePath, csvData + '\n', 'utf8');
-        console.log(`数据已追加到: ${filePath}`);
-      } else {
-        fs.writeFileSync(filePath, '\ufeff' + csvHeader + csvData, 'utf8');
-        console.log(`数据已保存到: ${filePath}`);
-      }
-
-      return newData.length;
-    } catch (e) {
-      console.log('保存数据出错:', e.message);
-      return 0;
-    }
-  };
 
   const clickNextPage = async () => {
     console.log('查找分页容器和下一页按钮...');
@@ -642,7 +527,6 @@ const path = require('path');
       console.log('开始分页采集数据...');
       console.log('========================================');
 
-      const filename = 'goofish_output.csv';
       let pageNumber = 1;
       let totalSaved = 0;
 
@@ -657,7 +541,7 @@ const path = require('path');
 
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-        const savedCount = saveData(pageData, filename);
+        const savedCount = saveData(pageData);
         totalSaved += savedCount;
 
         if (savedCount === 0) {

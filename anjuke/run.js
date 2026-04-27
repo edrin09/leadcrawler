@@ -1,6 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { saveData } = require('../utils/saveCsv');
 
 (async () => {
   const browser = await chromium.launch({ headless: false });
@@ -64,10 +65,11 @@ const path = require('path');
           if (detailUrl) {
             data.push({
               title: title || '',
-              price: price || '',
               district: district || '',
+              price: price || '',
+              imageUrl: imageUrl || '',
               detailUrl: detailUrl || '',
-              imageUrl: imageUrl || ''
+              source: 'anjuke'
             });
             console.log(`采集第 ${i + 1}/${count} 条: ${title.substring(0, 30)} | ${price} | ${district}`);
           }
@@ -81,64 +83,7 @@ const path = require('path');
     return data;
   };
 
-  const loadExistingUrls = (filePath) => {
-    const existingUrls = new Set();
-    try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const lines = content.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line) {
-            const parts = line.split('"');
-            if (parts.length >= 9) {
-              const url = parts[7];
-              if (url) {
-                existingUrls.add(url);
-              }
-            }
-          }
-        }
-        console.log(`已加载 ${existingUrls.size} 条现有数据`);
-      }
-    } catch (e) {
-      console.log('读取现有数据出错:', e.message);
-    }
-    return existingUrls;
-  };
 
-  const saveData = (data, filename) => {
-    try {
-      const filePath = path.join(outputDir, filename);
-      const existingUrls = loadExistingUrls(filePath);
-
-      const newData = data.filter(item => !existingUrls.has(item.detailUrl));
-      console.log(`过滤后新增 ${newData.length} 条数据`);
-
-      if (newData.length === 0) {
-        console.log('无新数据需要保存');
-        return 0;
-      }
-
-      const csvHeader = '标题,价格,区域,详情地址,图片\n';
-      const csvData = newData.map(item =>
-        `"${(item.title || '').replace(/"/g, '""')}","${(item.price || '').replace(/"/g, '""')}","${(item.district || '').replace(/"/g, '""')}","${(item.detailUrl || '').replace(/"/g, '""')}","${(item.imageUrl || '').replace(/"/g, '""')}"`
-      ).join('\n');
-
-      if (fs.existsSync(filePath)) {
-        fs.appendFileSync(filePath, csvData + '\n', 'utf8');
-        console.log(`数据已追加到: ${filePath}`);
-      } else {
-        fs.writeFileSync(filePath, '\ufeff' + csvHeader + csvData, 'utf8');
-        console.log(`数据已保存到: ${filePath}`);
-      }
-
-      return newData.length;
-    } catch (e) {
-      console.log('保存数据出错:', e.message);
-      return 0;
-    }
-  };
 
   const clickNextPage = async () => {
     try {
@@ -172,7 +117,6 @@ const path = require('path');
     console.log('开始分页采集数据...');
     console.log('========================================');
 
-    const filename = 'anjuke_output.csv';
     let pageNumber = 1;
     let totalSaved = 0;
 
@@ -187,7 +131,7 @@ const path = require('path');
 
       console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-      const savedCount = saveData(pageData, filename);
+      const savedCount = saveData(pageData);
       totalSaved += savedCount;
 
       if (savedCount === 0) {

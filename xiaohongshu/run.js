@@ -1,16 +1,55 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const { saveData } = require('../utils/saveCsv');
+
+function randomDelay(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 (async () => {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({
+    headless: false,
+    args: [
+      '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox'
+    ]
+  });
   const storageStatePath = path.join(__dirname, 'storageState.json');
   const context = await browser.newContext({
     viewport: null,
     args: ['--start-maximized'],
-    storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined
+    storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined,
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+    extraHTTPHeaders: {
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1'
+    }
   });
+
   const page = await context.newPage();
+
+  // 禁用自动化检测
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => undefined
+    });
+    Object.defineProperty(navigator, 'languages', {
+      get: () => ['zh-CN', 'zh', 'en']
+    });
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [1, 2, 3]
+    });
+  });
 
   const outputDir = path.join(__dirname, '../output');
   if (!fs.existsSync(outputDir)) {
@@ -132,7 +171,8 @@ const path = require('path');
   const collectPageData = async () => {
     const data = [];
     try {
-      await page.waitForTimeout(2000);
+      // 等待页面稳定
+      await sleep(randomDelay(1500, 3000));
 
       const container = page.locator('.feeds-container');
       if (!await container.isVisible({ timeout: 5000 })) {
@@ -146,7 +186,15 @@ const path = require('path');
 
       for (let i = 0; i < count; i++) {
         try {
+          // 模拟人类行为：滚动到当前元素
           const item = items.nth(i);
+          await item.scrollIntoViewIfNeeded({ behavior: 'smooth' });
+          await sleep(randomDelay(300, 800));
+
+          // 模拟鼠标悬停
+          await item.hover({ force: true });
+          await sleep(randomDelay(200, 500));
+
           const itemHtml = await item.evaluate(el => el.outerHTML);
 
           let detailUrl = '';
@@ -175,23 +223,24 @@ const path = require('path');
             }
           }
 
-          const textContent = await item.textContent();
-          let publishTime = '';
-          const timeMatch = textContent.match(/(\d+天前|\d+小时前|\d+分钟前|刚刚|今天|昨天|\d{4}-\d{2}-\d{2})/);
-          if (timeMatch) {
-            const timeDate = parsePublishTime(timeMatch[0]);
-            publishTime = formatDateTime(timeDate);
-          }
 
           if (detailUrl) {
             data.push({
               title: title || '',
-              publishTime: publishTime || '',
+              district: district || '',
+              imageUrl: imageUrl || '',
               detailUrl: detailUrl || '',
-              imageUrl: imageUrl || ''
+              source: 'xiaohongshu',
             });
             const showTitle = title ? title.substring(0, 30) : '(无标题)';
-            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle} | ${publishTime}`);
+            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle}`);
+          }
+
+          // 每采集几条数据后添加随机延迟
+          if ((i + 1) % 3 === 0) {
+            const batchDelay = randomDelay(1000, 2000);
+            console.log(`批次采集完成，等待 ${batchDelay}ms...`);
+            await sleep(batchDelay);
           }
         } catch (e) {
           console.log(`采集第 ${i + 1} 条失败: ${e.message}`);
@@ -203,63 +252,37 @@ const path = require('path');
     return data;
   };
 
-  const loadExistingUrls = (filePath) => {
-    const existingUrls = new Set();
+
+
+
+
+  const checkRateLimit = async () => {
     try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const lines = content.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line) {
-            const parts = line.split('"');
-            if (parts.length >= 7) {
-              const url = parts[5];
-              if (url) {
-                existingUrls.add(url);
-              }
-            }
-          }
+      const rateLimitTexts = [
+        '请求太频繁，请稍后再试',
+        '请求过于频繁',
+        '系统繁忙',
+        '请稍后重试',
+        '访问过于频繁'
+      ];
+
+      const pageContent = await page.content();
+      for (const text of rateLimitTexts) {
+        if (pageContent.includes(text)) {
+          console.log(`检测到限流提示: ${text}`);
+          return true;
         }
-        console.log(`已加载 ${existingUrls.size} 条现有数据`);
+      }
+
+      const rateLimitElements = page.locator('[class*="rate-limit"], [class*="warning"], [class*="error"]');
+      if (await rateLimitElements.count() > 0) {
+        console.log('检测到限流元素');
+        return true;
       }
     } catch (e) {
-      console.log('读取现有数据出错:', e.message);
+      console.log('检测限流出错:', e.message);
     }
-    return existingUrls;
-  };
-
-  const saveData = (data, filename) => {
-    try {
-      const filePath = path.join(outputDir, filename);
-      const existingUrls = loadExistingUrls(filePath);
-
-      const newData = data.filter(item => !existingUrls.has(item.detailUrl));
-      console.log(`过滤后新增 ${newData.length} 条数据`);
-
-      if (newData.length === 0) {
-        console.log('无新数据需要保存');
-        return 0;
-      }
-
-      const csvHeader = '标题,发布时间,详情地址,图片\n';
-      const csvData = newData.map(item =>
-        `"${(item.title || '').replace(/"/g, '""')}","${(item.publishTime || '').replace(/"/g, '""')}","${(item.detailUrl || '').replace(/"/g, '""')}","${(item.imageUrl || '').replace(/"/g, '""')}"`
-      ).join('\n');
-
-      if (fs.existsSync(filePath)) {
-        fs.appendFileSync(filePath, csvData + '\n', 'utf8');
-        console.log(`数据已追加到: ${filePath}`);
-      } else {
-        fs.writeFileSync(filePath, '\ufeff' + csvHeader + csvData, 'utf8');
-        console.log(`数据已保存到: ${filePath}`);
-      }
-
-      return newData.length;
-    } catch (e) {
-      console.log('保存数据出错:', e.message);
-      return 0;
-    }
+    return false;
   };
 
   const scrollAndLoad = async () => {
@@ -268,11 +291,21 @@ const path = require('path');
     const maxSameHeightCount = 5;
 
     while (sameHeightCount < maxSameHeightCount) {
+      // 检测限流
+      if (await checkRateLimit()) {
+        console.log('检测到限流，暂停采集...');
+        await sleep(randomDelay(10000, 30000));
+        continue;
+      }
+
       const currentHeight = await page.evaluate(() => document.body.scrollHeight);
       console.log(`当前页面高度: ${currentHeight}, 滚动到 ${currentHeight - 500}`);
 
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight - 500));
-      await page.waitForTimeout(2000);
+      // 模拟人类滚动行为
+      await page.evaluate((target) => {
+        window.scrollTo({ top: target, behavior: 'smooth' });
+      }, currentHeight - 500);
+      await sleep(randomDelay(1500, 3000));
 
       const newHeight = await page.evaluate(() => document.body.scrollHeight);
       if (newHeight === currentHeight) {
@@ -282,8 +315,11 @@ const path = require('path');
         sameHeightCount = 0;
       }
 
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight - 1000));
-      await page.waitForTimeout(1500);
+      // 再次滚动到更底部
+      await page.evaluate((target) => {
+        window.scrollTo({ top: target, behavior: 'smooth' });
+      }, newHeight - 1000);
+      await sleep(randomDelay(1000, 2000));
     }
     console.log('页面已加载到底部');
   };
@@ -298,8 +334,18 @@ const path = require('path');
 
     console.log('步骤2: 打开小红书搜索页面');
     const targetUrl = 'https://www.xiaohongshu.com/search_result/?keyword=%E8%A5%BF%E5%AE%89%E5%BA%97%E9%93%BA%E8%BD%AC%E8%AE%A9%E4%B8%AA%E4%BA%BA&source=web_search_result_notes&type=51';
+
+    // 访问前添加随机延迟
+    const delayBeforeAccess = randomDelay(2000, 5000);
+    console.log(`访问前等待 ${delayBeforeAccess}ms...`);
+    await sleep(delayBeforeAccess);
+
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForTimeout(5000);
+
+    // 访问后添加随机延迟
+    const delayAfterAccess = randomDelay(3000, 6000);
+    console.log(`页面加载后等待 ${delayAfterAccess}ms...`);
+    await sleep(delayAfterAccess);
 
     await waitForAndHandleLoginModal();
 
@@ -312,33 +358,75 @@ const path = require('path');
     let totalData = [];
     let pageIndex = 1;
     const maxPages = 10;
+    const batchSize = 20;
+    let consecutiveEmptyPages = 0;
+    const maxConsecutiveEmptyPages = 3;
 
-    while (pageIndex <= maxPages) {
+    while (pageIndex <= maxPages && consecutiveEmptyPages < maxConsecutiveEmptyPages) {
+      // 检测限流
+      if (await checkRateLimit()) {
+        console.log('检测到限流，暂停采集...');
+        await sleep(randomDelay(15000, 30000));
+        continue;
+      }
+
       console.log(`\n========== 第 ${pageIndex} 次采集 ==========`);
+
+      // 采集前添加随机延迟
+      const delayBeforeCollect = randomDelay(1000, 3000);
+      console.log(`采集前等待 ${delayBeforeCollect}ms...`);
+      await sleep(delayBeforeCollect);
 
       const pageData = await collectPageData();
       if (pageData.length === 0) {
         console.log('未采集到数据，可能已到底部');
+        consecutiveEmptyPages++;
+        console.log(`连续未采集到数据 ${consecutiveEmptyPages}/${maxConsecutiveEmptyPages}`);
       } else {
+        consecutiveEmptyPages = 0;
         totalData = totalData.concat(pageData);
         console.log(`本轮采集 ${pageData.length} 条, 累计 ${totalData.length} 条`);
+
+        // 每20条数据保存一次
+        if (totalData.length >= batchSize) {
+          console.log(`\n========== 累计达到 ${totalData.length} 条，开始保存 ==========`);
+          const savedCount = saveData(totalData, 'xiaohongshu.csv');
+          console.log(`成功保存 ${savedCount} 条新数据`);
+          totalData = []; // 清空已保存的数据
+        }
       }
 
-      if (pageIndex < maxPages) {
+      if (pageIndex < maxPages && consecutiveEmptyPages < maxConsecutiveEmptyPages) {
         console.log(`准备滚动加载第 ${pageIndex + 1} 页...`);
         await scrollAndLoad();
-        await page.waitForTimeout(2000);
+
+        // 滚动后添加随机延迟
+        const delayAfterScroll = randomDelay(2000, 4000);
+        console.log(`滚动后等待 ${delayAfterScroll}ms...`);
+        await sleep(delayAfterScroll);
+
         await waitForAndHandleLoginModal();
       }
 
       pageIndex++;
     }
 
-    console.log(`\n========== 开始保存数据 ==========`);
-    console.log(`总计采集 ${totalData.length} 条数据`);
+    // 保存剩余数据
+    if (totalData.length > 0) {
+      console.log(`\n========== 保存剩余数据 ==========`);
+      console.log(`剩余 ${totalData.length} 条数据`);
+      const savedCount = saveData(totalData, 'xiaohongshu.csv');
+      console.log(`成功保存 ${savedCount} 条新数据`);
+    }
 
-    const savedCount = saveData(totalData, 'xiaohongshu.csv');
-    console.log(`成功保存 ${savedCount} 条新数据`);
+    if (consecutiveEmptyPages >= maxConsecutiveEmptyPages) {
+      console.log(`\n已连续 ${maxConsecutiveEmptyPages} 次未采集到数据，停止采集`);
+    }
+
+    // 保存后添加随机延迟
+    const delayAfterSave = randomDelay(2000, 4000);
+    console.log(`保存后等待 ${delayAfterSave}ms...`);
+    await sleep(delayAfterSave);
 
     console.log('\n采集完成!');
     await page.screenshot({ path: 'xiaohongshu_done.png', fullPage: true });
