@@ -406,9 +406,11 @@ async function runXiaohongshuCrawler() {
   const scrollAndLoad = async () => {
     let lastHeight = 0;
     let sameHeightCount = 0;
-    const maxSameHeightCount = 5;
+    const maxSameHeightCount = 3;
+    const scrollAttempts = 10;
+    let currentAttempt = 0;
 
-    while (sameHeightCount < maxSameHeightCount) {
+    while (sameHeightCount < maxSameHeightCount && currentAttempt < scrollAttempts) {
       // 检测限流
       if (await checkRateLimit()) {
         console.log('检测到限流，暂停采集...');
@@ -417,13 +419,13 @@ async function runXiaohongshuCrawler() {
       }
 
       const currentHeight = await page.evaluate(() => document.body.scrollHeight);
-      console.log(`当前页面高度: ${currentHeight}, 滚动到 ${currentHeight - 500}`);
+      console.log(`滚动尝试 ${currentAttempt + 1}/${scrollAttempts}, 当前页面高度: ${currentHeight}`);
 
       // 模拟人类滚动行为
       await page.evaluate((target) => {
         window.scrollTo({ top: target, behavior: 'smooth' });
-      }, currentHeight - 500);
-      await sleep(randomDelay(1500, 3000));
+      }, currentHeight - 200);
+      await sleep(randomDelay(1000, 2000));
 
       const newHeight = await page.evaluate(() => document.body.scrollHeight);
       if (newHeight === currentHeight) {
@@ -433,13 +435,9 @@ async function runXiaohongshuCrawler() {
         sameHeightCount = 0;
       }
 
-      // 再次滚动到更底部
-      await page.evaluate((target) => {
-        window.scrollTo({ top: target, behavior: 'smooth' });
-      }, newHeight - 1000);
-      await sleep(randomDelay(1000, 2000));
+      currentAttempt++;
     }
-    console.log('页面已加载到底部');
+    console.log('页面已加载完成');
   };
 
   try {
