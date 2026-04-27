@@ -286,7 +286,6 @@ const path = require('path');
       await page.waitForTimeout(1500);
     }
     console.log('页面已加载到底部');
-    return 'bottom';
   };
 
   try {
@@ -297,182 +296,49 @@ const path = require('path');
       console.log('未找到登录状态文件，需要进行登录');
     }
 
-    console.log('步骤2: 打开小红书首页');
-    await page.goto('https://www.xiaohongshu.com/explore', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    console.log('步骤2: 打开小红书搜索页面');
+    const targetUrl = 'https://www.xiaohongshu.com/search_result/?keyword=%E8%A5%BF%E5%AE%89%E5%BA%97%E9%93%BA%E8%BD%AC%E8%AE%A9%E4%B8%AA%E4%BA%BA&source=web_search_result_notes&type=51';
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForTimeout(5000);
 
     await waitForAndHandleLoginModal();
 
-    console.log('步骤3: 等待页面稳定后处理登录弹窗');
-    await page.waitForTimeout(3000);
-    await waitForAndHandleLoginModal();
-
-    console.log('步骤4: 查找搜索框并输入关键词');
-    const searchSelectors = [
-      'input[placeholder*="搜索"]',
-      'input[aria-label*="搜索"]',
-      'input[type="search"]',
-      '#search-input',
-      '.search-input',
-      'input[name*="keyword"]',
-      '[class*="search-input"]'
-    ];
-
-    let searchInput = null;
-    for (const sel of searchSelectors) {
-      const el = page.locator(sel).first();
-      if (await el.isVisible({ timeout: 2000 }).catch(() => false)) {
-        searchInput = el;
-        console.log(`找到搜索框: ${sel}`);
-        break;
-      }
-    }
-
-    if (!searchInput) {
-      console.log('未找到搜索框，尝试点击搜索按钮展开搜索框...');
-      const searchBtnSelectors = [
-        '[class*="search-icon"]',
-        '[class*="search-trigger"]',
-        '[aria-label*="搜索"]',
-        '[class*="search-button"]'
-      ];
-
-      for (const sel of searchBtnSelectors) {
-        const btn = page.locator(sel).first();
-        if (await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-          console.log(`点击搜索按钮: ${sel}`);
-          await btn.click({ force: true });
-          await page.waitForTimeout(1000);
-
-          for (const inputSel of searchSelectors) {
-            const inputEl = page.locator(inputSel).first();
-            if (await inputEl.isVisible({ timeout: 1000 }).catch(() => false)) {
-              searchInput = inputEl;
-              console.log(`点击后找到搜索框: ${inputSel}`);
-              break;
-            }
-          }
-          if (searchInput) break;
-        }
-      }
-    }
-
-    if (!searchInput) {
-      console.log('未找到搜索框，截图保存');
-      await page.screenshot({ path: 'xiaohongshu_no_search.png' });
-      throw new Error('未找到搜索框');
-    }
-
-    console.log('点击搜索框使其获得焦点...');
-    await searchInput.click({ force: true });
-    await page.waitForTimeout(500);
-
-    console.log('清空搜索框内容...');
-    await searchInput.fill('');
-    await page.waitForTimeout(300);
-
-    console.log('在搜索框输入: 西安店铺转让个人');
-    await searchInput.fill('西安店铺转让个人');
-    await page.waitForTimeout(500);
-
-    console.log('尝试点击搜索按钮提交...');
-    const submitSelectors = [
-      '[class*="search-icon"]',
-      '[class*="search-btn"]',
-      '[class*="search-button"]',
-      'button:has-text("搜索")',
-      '[aria-label="搜索"]',
-      '[class*="submit"]'
-    ];
-
-    let submitted = false;
-    for (const sel of submitSelectors) {
-      const btn = page.locator(sel).first();
-      if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
-        console.log(`点击提交按钮: ${sel}`);
-        await btn.click({ force: true });
-        submitted = true;
-        break;
-      }
-    }
-
-    if (!submitted) {
-      console.log('未找到提交按钮，尝试按回车键...');
-      await searchInput.press('Enter');
-    }
-
-    console.log('已提交搜索请求');
-
-    await page.waitForTimeout(5000);
-    await waitForAndHandleLoginModal();
-
-    console.log('步骤5: 等待搜索结果页面加载');
-    try {
-      await page.waitForSelector('.feeds-container', { timeout: 30000 });
-      console.log('feeds-container 已找到，搜索结果已加载');
-    } catch (e) {
-      console.log('未找到 feeds-container，可能需要滚动加载');
-      await page.waitForTimeout(3000);
-    }
+    console.log('步骤3: 等待页面加载完成');
+    await page.waitForSelector('.feeds-container', { timeout: 30000 });
+    console.log('feeds-container 已找到');
 
     await waitForAndHandleLoginModal();
 
     let totalData = [];
     let pageIndex = 1;
-    let emptyCount = 0;
-    const maxEmptyCount = 3;
+    const maxPages = 10;
 
-    while (true) {
+    while (pageIndex <= maxPages) {
       console.log(`\n========== 第 ${pageIndex} 次采集 ==========`);
 
-      const preScrollCount = totalData.length;
       const pageData = await collectPageData();
-
       if (pageData.length === 0) {
-        console.log('未采集到数据');
-        emptyCount++;
+        console.log('未采集到数据，可能已到底部');
       } else {
         totalData = totalData.concat(pageData);
         console.log(`本轮采集 ${pageData.length} 条, 累计 ${totalData.length} 条`);
-        emptyCount = 0;
       }
 
-      if (totalData.length >= 20) {
-        console.log(`\n[每20条保存] 当前已采集 ${totalData.length} 条，执行保存...`);
-        const savedCount = saveData(totalData, 'xiaohongshu.csv');
-        totalData = [];
-        console.log(`已保存 ${savedCount} 条数据到CSV`);
+      if (pageIndex < maxPages) {
+        console.log(`准备滚动加载第 ${pageIndex + 1} 页...`);
+        await scrollAndLoad();
+        await page.waitForTimeout(2000);
+        await waitForAndHandleLoginModal();
       }
 
-      if (emptyCount >= maxEmptyCount) {
-        console.log(`连续 ${maxEmptyCount} 次未采集到新数据，停止采集`);
-        break;
-      }
-
-      if (pageIndex >= 30) {
-        console.log('已达到最大采集次数限制，停止采集');
-        break;
-      }
-
-      console.log(`准备滚动加载...`);
-      const scrollResult = await scrollAndLoad();
-
-      if (scrollResult === 'bottom') {
-        console.log('页面已滚动到底部，停止采集');
-        break;
-      }
-
-      await page.waitForTimeout(2000);
-      await waitForAndHandleLoginModal();
       pageIndex++;
     }
 
-    if (totalData.length > 0) {
-      console.log(`\n========== 保存剩余数据 ==========`);
-      console.log(`还有 ${totalData.length} 条数据未保存，执行保存...`);
-      const savedCount = saveData(totalData, 'xiaohongshu.csv');
-      console.log(`已保存 ${savedCount} 条数据到CSV`);
-    }
+    console.log(`\n========== 开始保存数据 ==========`);
+    console.log(`总计采集 ${totalData.length} 条数据`);
+
+    const savedCount = saveData(totalData, 'xiaohongshu.csv');
+    console.log(`成功保存 ${savedCount} 条新数据`);
 
     console.log('\n采集完成!');
     await page.screenshot({ path: 'xiaohongshu_done.png', fullPage: true });
