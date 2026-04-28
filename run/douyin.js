@@ -79,6 +79,254 @@ async function runDouyinCrawler() {
   }
 
   let loginModalHandled = false;
+  let loginAttempts = 0;
+  const maxLoginAttempts = 3;
+
+  const checkLoginRequired = async () => {
+    try {
+      const isLoggedIn = await checkIsLoggedIn();
+      if (isLoggedIn) {
+        console.log('已检测到登录状态，跳过登录检查');
+        return false;
+      }
+
+      const pageContent = await page.content();
+      
+      if (pageContent.includes('window._SSR_DATA') || pageContent.includes('__INITIAL_STATE__')) {
+        console.log('页面已加载数据，可能已登录');
+        const contentLoaded = await checkContentLoaded();
+        if (contentLoaded) {
+          console.log('搜索结果已加载，认为已登录');
+          return false;
+        }
+      }
+
+      const loginTexts = [
+        '请登录',
+        '需要登录',
+        '登录后',
+        '登录才能',
+        '登录体验',
+        '登录查看',
+        '登录观看',
+        '登录账号',
+        '手机号登录',
+        '验证码登录',
+        '扫码登录',
+        '密码登录',
+        '同意并登录',
+        '登录即同意'
+      ];
+
+      for (const text of loginTexts) {
+        if (pageContent.includes(text)) {
+          console.log(`检测到登录提示文本: ${text}`);
+          return true;
+        }
+      }
+
+      const blockedContent = page.locator('[class*="blocked"], [class*="restrict"], [class*="limit"]');
+      if (await blockedContent.count() > 0) {
+        console.log('检测到内容限制元素');
+        return true;
+      }
+
+      const pageTitle = await page.title();
+      if (pageTitle.includes('登录') || pageTitle.includes('Login')) {
+        console.log('页面标题包含登录提示');
+        return true;
+      }
+
+    } catch (e) {
+      console.log('登录检测异常:', e.message);
+    }
+    return false;
+  };
+
+  const checkContentLoaded = async () => {
+    try {
+      const contentSelectors = [
+        '[data-e2e="search-result"]',
+        '[class*="video-list"]',
+        '[class*="feed-list"]',
+        '.search-result',
+        '.video-list',
+        'article',
+        'section'
+      ];
+
+      for (const selector of contentSelectors) {
+        const elements = page.locator(selector);
+        const count = await elements.count();
+        if (count > 0) {
+          console.log(`检测到内容元素: ${selector}, 数量: ${count}`);
+          return true;
+        }
+      }
+
+      const pageContent = await page.content();
+      if (pageContent.includes('video') && pageContent.includes('title')) {
+        console.log('页面包含视频内容');
+        return true;
+      }
+
+    } catch (e) {
+      console.log('内容检测异常:', e.message);
+    }
+    return false;
+  };
+
+  const checkIsLoggedIn = async () => {
+    try {
+      const loggedInIndicators = [
+        '[class*="avatar"]',
+        '[class*="user-info"]',
+        '[class*="nickname"]',
+        '[class*="username"]',
+        '[class*="profile"]',
+        '[data-e2e="user-avatar"]',
+        '[data-e2e="user-info"]'
+      ];
+
+      for (const selector of loggedInIndicators) {
+        const element = page.locator(selector).first();
+        if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
+          console.log(`检测到已登录标识: ${selector}`);
+          return true;
+        }
+      }
+
+      const hasLoginText = await checkLoginRequired();
+      if (!hasLoginText) {
+        const pageContent = await page.content();
+        if (pageContent.includes('退出') || pageContent.includes('我的') || pageContent.includes('个人中心')) {
+          console.log('检测到已登录相关文本');
+          return true;
+        }
+      }
+
+    } catch (e) {
+      console.log('登录状态检测异常:', e.message);
+    }
+    return false;
+  };
+
+  const saveLoginState = async () => {
+    try {
+      console.log('保存登录状态到 storageState.json...');
+      await context.storageState({ path: storageStatePath });
+      
+      if (fs.existsSync(storageStatePath)) {
+        const stats = fs.statSync(storageStatePath);
+        console.log(`登录状态已保存，文件大小: ${stats.size} 字节`);
+        
+        const stateContent = fs.readFileSync(storageStatePath, 'utf-8');
+        const state = JSON.parse(stateContent);
+        const cookieCount = state.cookies ? state.cookies.length : 0;
+        const originCount = state.origins ? state.origins.length : 0;
+        console.log(`保存了 ${cookieCount} 个 cookies 和 ${originCount} 个 origins`);
+        return true;
+      } else {
+        console.log('警告: 登录状态文件未创建');
+        return false;
+      }
+    } catch (e) {
+      console.error('保存登录状态失败:', e.message);
+      return false;
+    }
+  };
+
+  const handleSliderCaptcha = async () => {
+    try {
+      console.log('尝试处理滑块验证码...');
+      
+      const sliderSelectors = [
+        '[class*="slider"]',
+        '[class*="drag"]',
+        '[class*="captcha"] button',
+        '.captcha-slider',
+        '.verify-slider',
+        '[role="slider"]',
+        'div[draggable="true"]'
+      ];
+
+      let slider = null;
+      for (const selector of sliderSelectors) {
+        const element = page.locator(selector).first();
+        if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
+          slider = element;
+          console.log(`找到滑块元素: ${selector}`);
+          break;
+        }
+      }
+
+      if (!slider) {
+        console.log('未找到滑块元素');
+        return false;
+      }
+
+      const sliderBox = await slider.boundingBox();
+      if (!sliderBox) {
+        console.log('无法获取滑块位置');
+        return false;
+      }
+
+      const targetAreaSelectors = [
+        '[class*="target"]',
+        '[class*="gap"]',
+        '[class*="hole"]',
+        '[class*="puzzle"]'
+      ];
+
+      let targetPosition = sliderBox.width * 1.5;
+      for (const selector of targetAreaSelectors) {
+        const element = page.locator(selector).first();
+        if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
+          const box = await element.boundingBox();
+          if (box) {
+            targetPosition = box.x - sliderBox.x;
+            console.log(`找到目标位置: ${targetPosition}px`);
+            break;
+          }
+        }
+      }
+
+      console.log(`准备拖动滑块，目标位置: ${targetPosition}px`);
+      
+      await page.mouse.move(sliderBox.x + sliderBox.width / 2, sliderBox.y + sliderBox.height / 2);
+      await page.mouse.down();
+      
+      const steps = 20;
+      const stepDuration = 100;
+      const stepDistance = targetPosition / steps;
+      
+      for (let i = 1; i <= steps; i++) {
+        const currentX = sliderBox.x + sliderBox.width / 2 + stepDistance * i;
+        const currentY = sliderBox.y + sliderBox.height / 2 + Math.sin(i / steps * Math.PI) * 5;
+        await page.mouse.move(currentX, currentY);
+        await page.waitForTimeout(stepDuration / steps);
+      }
+      
+      await page.waitForTimeout(100);
+      await page.mouse.up();
+      
+      console.log('滑块拖动完成');
+      await page.waitForTimeout(2000);
+
+      const success = await checkContentLoaded();
+      if (success) {
+        console.log('滑块验证可能成功');
+        return true;
+      }
+      
+      console.log('滑块验证可能失败，请手动完成验证');
+      return false;
+      
+    } catch (e) {
+      console.error('滑块验证处理失败:', e.message);
+      return false;
+    }
+  };
 
   const waitForAndHandleLoginModal = async () => {
     try {
@@ -88,52 +336,121 @@ async function runDouyinCrawler() {
         '[class*="login-box"]',
         '[class*="login-dialog"]',
         '[class*="passport"]',
+        '[class*="auth-modal"]',
+        '[class*="captcha"]',
+        '[class*="login-form"]',
+        '[class*="login-btn"]',
         '.login-modal',
         '.login-wrapper',
-        '[data-e2e="login-modal"]'
+        '.auth-modal',
+        '[data-e2e="login-modal"]',
+        '[data-e2e="login"]',
+        'div[role="dialog"]',
+        '.dy-login-container',
+        '.dy-passport-modal',
+        '[class*="VerificationModal"]',
+        '[class*="verify-modal"]',
+        '[class*="security"]',
+        '[class*="validate-modal"]',
+        '[class*="confirm-modal"]',
+        '[class*="dialog-container"]',
+        '[class*="modal-content"]'
       ];
+
+      let foundModal = null;
+      let foundSelector = '';
 
       for (const sel of loginModalSelectors) {
         const modal = page.locator(sel).first();
         if (await modal.isVisible({ timeout: 2000 }).catch(() => false)) {
-          console.log(`发现登录弹窗: ${sel}`);
+          const boundingBox = await modal.boundingBox();
+          if (boundingBox && boundingBox.width > 100 && boundingBox.height > 100) {
+            foundModal = modal;
+            foundSelector = sel;
+            console.log(`发现登录弹窗: ${sel}`);
+            break;
+          }
+        }
+      }
 
-          if (!loginModalHandled) {
-            loginModalHandled = true;
-            console.log('========================================');
-            console.log('抖音需要登录，请使用手机扫码或验证码登录');
-            console.log('登录成功后脚本将自动继续运行...');
-            console.log('========================================');
+      if (!foundModal) {
+        const hasLoginText = await checkLoginRequired();
+        if (hasLoginText && !loginModalHandled) {
+          console.log('未找到明确的登录弹窗，但检测到登录相关内容');
+          foundModal = page.locator('body').first();
+          foundSelector = 'body (login text detected)';
+        }
+      }
 
-            const startTime = Date.now();
-            const waitTime = 120000;
-            while (Date.now() - startTime < waitTime) {
-              const isVisible = await modal.isVisible({ timeout: 1000 }).catch(() => false);
-              if (!isVisible) {
-                console.log('登录成功，弹窗已关闭！');
+      if (foundModal) {
+        if (!loginModalHandled || loginAttempts < maxLoginAttempts) {
+          loginModalHandled = true;
+          loginAttempts++;
+          console.log('========================================');
+          console.log(`抖音需要登录 (第 ${loginAttempts} 次尝试)`);
+          console.log('请使用手机扫码或验证码登录');
+          console.log('登录成功后脚本将自动继续运行...');
+          console.log('========================================');
 
-                console.log('保存登录状态到 storageState.json...');
-                await context.storageState({ path: storageStatePath });
-                console.log('登录状态已保存，下次运行将自动使用');
-
+          const startTime = Date.now();
+          const waitTime = 300000;
+          const checkInterval = 2000;
+          let lastLoginCheck = true;
+          let stableCount = 0;
+          
+          while (Date.now() - startTime < waitTime) {
+            let isVisible = false;
+            try {
+              isVisible = await foundModal.isVisible({ timeout: 1000 });
+            } catch (e) {
+              isVisible = false;
+            }
+            
+            const hasLoginText = await checkLoginRequired();
+            
+            if (!isVisible && !hasLoginText) {
+              stableCount++;
+              console.log(`登录弹窗已关闭且无登录文本 (连续 ${stableCount}/3 次确认)`);
+              
+              if (stableCount >= 3) {
+                console.log('登录成功确认！');
+                await saveLoginState();
                 return true;
               }
-              if (Math.floor((Date.now() - startTime) / 10000) > 0 &&
-                (Date.now() - startTime) % 10000 < 500) {
-                console.log(`等待登录中... 已等待 ${Math.floor((Date.now() - startTime) / 1000)} 秒`);
+            } else {
+              stableCount = 0;
+              
+              if (!isVisible && hasLoginText && lastLoginCheck) {
+                console.log('弹窗已关闭但仍有登录文本，继续等待...');
+              } else if (isVisible && !hasLoginText) {
+                console.log('弹窗仍在但无登录文本，可能已登录');
               }
-              await page.waitForTimeout(1000);
             }
+            
+            const pageContent = await page.content();
+            if (pageContent.includes('验证') && (pageContent.includes('滑块') || pageContent.includes('拖动') || pageContent.includes('拼图'))) {
+              console.log('检测到滑块验证码，尝试自动处理...');
+              await handleSliderCaptcha();
+            }
+            
+            lastLoginCheck = hasLoginText;
+            await page.waitForTimeout(checkInterval);
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = Math.floor((waitTime - (Date.now() - startTime)) / 1000);
+            if (elapsed % 10 === 0) {
+              console.log(`等待登录中... 已等待 ${elapsed} 秒，剩余 ${remaining} 秒`);
+            }
+          }
 
-            console.log('等待登录超时，但继续执行...');
-            return false;
-          } else {
-            console.log('再次发现登录弹窗，尝试关闭...');
-            const closeBtn = modal.locator('[class*="close"], button, [aria-label="关闭"]').first();
-            if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-              await closeBtn.click({ force: true });
-              await page.waitForTimeout(500);
-            }
+          console.log('等待登录超时，但继续执行...');
+          return false;
+        } else {
+          console.log('再次发现登录弹窗，尝试关闭...');
+          const closeBtn = foundModal.locator('[class*="close"], button, [aria-label="关闭"], [class*="cancel"], [class*="dismiss"]').first();
+          if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+            await closeBtn.click({ force: true });
+            await page.waitForTimeout(1000);
           }
         }
       }
@@ -547,11 +864,46 @@ async function runDouyinCrawler() {
     });
     await sleep(randomDelay(2000, 3000));
 
-    await waitForAndHandleLoginModal();
+    console.log('检查是否需要登录...');
+    const hasLoginModal = await waitForAndHandleLoginModal();
+    
+    if (!hasLoginModal) {
+      console.log('未检测到登录弹窗，检查是否已登录...');
+      const isLoggedIn = await checkIsLoggedIn();
+      if (isLoggedIn) {
+        console.log('检测到用户已登录');
+        if (!fs.existsSync(storageStatePath)) {
+          console.log('首次运行且已登录，保存登录状态...');
+          await saveLoginState();
+        }
+      } else {
+        const hasLoginText = await checkLoginRequired();
+        if (!hasLoginText) {
+          console.log('页面无登录相关内容，可能已登录（备用检测）');
+          if (!fs.existsSync(storageStatePath)) {
+            console.log('首次运行，尝试保存登录状态...');
+            await saveLoginState();
+          }
+        }
+      }
+    }
 
     await applyFilterSettings();
 
     await waitForAndHandleLoginModal();
+    
+    console.log('========================================');
+    console.log('提示: 登录后如果状态未自动保存，可以：');
+    console.log('1. 在浏览器控制台执行: console.log("save-login-state")');
+    console.log('2. 或者等待页面加载完成后重新运行脚本');
+    console.log('========================================');
+    
+    page.on('console', async (msg) => {
+      if (msg.text().includes('save-login-state')) {
+        console.log('收到手动保存登录状态请求...');
+        await saveLoginState();
+      }
+    });
 
     let totalData = [];
     let pageIndex = 1;
