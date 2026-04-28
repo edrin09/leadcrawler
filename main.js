@@ -16,6 +16,10 @@ async function runCrawlers() {
   console.log('Goofish 爬虫:', getEnvBool('CRAWL_GOOFISH') ? '启用' : '禁用');
   console.log('小红书爬虫:', getEnvBool('CRAWL_XIAOHONGSHU') ? '启用' : '禁用');
   console.log('抖音爬虫:', getEnvBool('CRAWL_DOUYIN') ? '启用' : '禁用');
+  console.log('------------------------------');
+  console.log('数据存储方式:', process.env.STORAGE_TYPE || 'csv');
+  console.log('数据库名称:', process.env.DATABASE_NAME || 'crawler_db');
+  console.log('数据表名称:', process.env.TABLE_NAME || 'data');
   console.log('==============================');
   console.log('\n开始加载爬虫脚本...');
 
@@ -32,7 +36,7 @@ async function runCrawlers() {
       console.error('加载或执行 58.js 失败:', error.message);
     }
   } else {
-    console.log('\n58 爬虫已跳过（未启用）');
+    console.log('\n58爬虫 已禁用');
   }
 
   // 加载安居客爬虫
@@ -48,7 +52,7 @@ async function runCrawlers() {
       console.error('加载或执行 anjuke.js 失败:', error.message);
     }
   } else {
-    console.log('\n安居客爬虫已跳过（未启用）');
+    console.log('\n安居客爬虫 已禁用');
   }
 
   // 加载 Goofish 爬虫
@@ -64,7 +68,7 @@ async function runCrawlers() {
       console.error('加载或执行 goofish.js 失败:', error.message);
     }
   } else {
-    console.log('\nGoofish 爬虫已跳过（未启用）');
+    console.log('\nGoofish爬虫 已禁用');
   }
 
   // 加载小红书爬虫
@@ -80,7 +84,7 @@ async function runCrawlers() {
       console.error('加载或执行 xiaohongshu.js 失败:', error.message);
     }
   } else {
-    console.log('\n小红书爬虫已跳过（未启用）');
+    console.log('\n小红书爬虫 已禁用');
   }
 
   // 加载抖音爬虫
@@ -96,7 +100,7 @@ async function runCrawlers() {
       console.error('加载或执行 douyin.js 失败:', error.message);
     }
   } else {
-    console.log('\n抖音爬虫已跳过（未启用）');
+    console.log('\n抖音爬虫 已禁用');
   }
 
   console.log('\n所有爬虫脚本执行完成');

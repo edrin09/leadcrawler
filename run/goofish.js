@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
-const { saveData } = require('../utils/saveCsv');
+const { saveData } = require('../utils/storageFactory');
 
 async function runGoofishCrawler() {
   const browser = await chromium.launch({ headless: false });
@@ -536,7 +536,8 @@ async function runGoofishCrawler() {
 
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-        const savedCount = saveData(pageData);
+        const saveResult = await saveData(pageData);
+        const savedCount = saveResult.successCount;
         totalSaved += savedCount;
 
         if (savedCount === 0) {

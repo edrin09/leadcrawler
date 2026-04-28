@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
-const { saveData } = require('../utils/saveCsv');
+const { saveData } = require('../utils/storageFactory');
 
 function randomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -751,8 +751,8 @@ async function runDouyinCrawler() {
 
           if (data.length >= 20) {
             console.log(`\n========== 累计达到 ${data.length} 条，开始保存 ==========`);
-            const savedCount = saveData(data);
-            console.log(`成功保存 ${savedCount} 条新数据`);
+            const saveResult = await saveData(data);
+            console.log(`成功保存 ${saveResult.successCount} 条新数据`);
             data.length = 0;
           }
         } catch (e) {
@@ -937,8 +937,8 @@ async function runDouyinCrawler() {
 
         if (totalData.length >= batchSize) {
           console.log(`\n========== 累计达到 ${totalData.length} 条，开始保存 ==========`);
-          const savedCount = saveData(totalData);
-          console.log(`成功保存 ${savedCount} 条新数据`);
+          const saveResult = await saveData(totalData);
+          console.log(`成功保存 ${saveResult.successCount} 条新数据`);
           totalData = [];
         }
       }
@@ -960,8 +960,8 @@ async function runDouyinCrawler() {
     if (totalData.length > 0) {
       console.log(`\n========== 保存剩余数据 ==========`);
       console.log(`剩余 ${totalData.length} 条数据`);
-      const savedCount = saveData(totalData, 'douyin.csv');
-      console.log(`成功保存 ${savedCount} 条新数据`);
+      const saveResult = await saveData(totalData);
+      console.log(`成功保存 ${saveResult.successCount} 条新数据`);
     }
 
     if (consecutiveEmptyPages >= maxConsecutiveEmptyPages) {
