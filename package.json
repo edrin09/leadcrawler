@@ -1,7 +1,17 @@
 {
+  "name": "h5-data-display",
+  "version": "1.0.0",
+  "description": "H5项目展示SQLite数据",
+  "main": "server.js",
+  "scripts": {
+     "dev": "nodemon server.js"
+  },
   "dependencies": {
-    "dotenv": "^17.4.2",
-    "playwright": "^1.59.1",
-    "sql.js": "^1.14.1"
+    "express": "^4.18.2",
+    "sql.js": "^1.10.3",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
