@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 class SqliteStorage {
-  constructor(databaseName = 'crawler_db', tableName = 'data', outputDir = path.join(__dirname, '../output')) {
+  constructor(databaseName = 'crawlerdb', tableName = 'data', outputDir = path.join(__dirname, '../output')) {
     this.databaseName = databaseName;
     this.tableName = tableName;
     this.outputDir = outputDir;
