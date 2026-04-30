@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket客户端测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .log {
+            border: 1px solid #eee;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background-color: #f5f5f5;
+        }
+        .message {
+            margin-bottom: 5px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        input, textarea, button {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        input {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket客户端测试</h1>
+    
+    <div class="container">
+        <h2>连接设置</h2>
+        <div class="input-group">
+            <input type="text" id="wsUrl" value="ws://127.0.0.1:8282" placeholder="WebSocket服务器地址">
+            <button onclick="connect()">连接</button>
+            <button onclick="disconnect()">断开</button>
+        </div>
+        
+        <h2>身份认证</h2>
+        <div class="input-group">
+            <input type="text" id="token" placeholder="用户认证Token">
+            <button onclick="authenticate()">认证</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>发送消息</h2>
+        <div class="input-group">
+            <input type="number" id="toUserId" placeholder="接收用户ID">
+            <select id="messageType">
+                <option value="text">文本</option>
+                <option value="image">图片</option>
+                <option value="voice">语音</option>
+            </select>
+            <textarea style="width: 300px" id="messageContent" rows="3" placeholder="消息内容"></textarea>
+            <button onclick="sendMessage()">发送</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="broadcastContent" placeholder="广播内容">
+            <button onclick="sendBroadcast()">发送广播</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="number" id="userInfoId" placeholder="用户ID">
+            <button onclick="getUserInfo()">获取用户信息</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>日志</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        let isAuthenticated = false;
+        
+        // 连接WebSocket服务器
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            
+            if (ws && isConnected) {
+                log('已经连接到服务器', 'error');
+                return;
+            }
+            
+            try {
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = function() {
+                    isConnected = true;
+                    log('连接成功', 'success');
+                };
+                
+                ws.onmessage = function(event) {
+                    log('收到消息: ' + event.data);
+                    
+                    // 处理服务器消息
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'connect_success') {
+                            log('服务器要求认证', 'info');
+                        } else if (data.type === 'auth_success') {
+                            isAuthenticated = true;
+                            console.log(data);
+                            log('认证成功，欢迎 success');
+                        } else if (data.type === 'new_message') {
+                            log('新消息: 来自用户 ' + data.from_user_id + ': ' + data.content, 'success');
+                        } else if (data.type === 'ping') {
+                            // 响应心跳
+                            ws.send(JSON.stringify({ type: 'ping', timestamp: data.timestamp }));
+                        }
+                    } catch (e) {
+                        log('消息解析错误: ' + e.message, 'error');
+                    }
+                };
+                
+                ws.onerror = function(error) {
+                    log('连接错误: ' + error, 'error');
+                };
+                
+                ws.onclose = function() {
+                    isConnected = false;
+                    isAuthenticated = false;
+                    log('连接已关闭', 'error');
+                };
+                
+            } catch (e) {
+                log('连接失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 断开连接
+        function disconnect() {
+            if (ws && isConnected) {
+                ws.close();
+            }
+        }
+        
+        // 身份认证
+        function authenticate() {
+            if (!isConnected) {
+                log('请先连接服务器', 'error');
+                return;
+            }
+            
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('请输入认证Token', 'error');
+                return;
+            }
+            
+            const data = {
+                type: 'auth',
+                token: token
+            };
+            
+            ws.send(JSON.stringify(data));
+            log('正在认证...');
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            if (!isAuthenticated) {
+                log('请先进行身份认证', 'error');
+                return;
+            }
+            
+            const toUserId = document.getElementById('toUserId').value;
+            const messageType = document.getElementById('messageType').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!toUserId || !content) {
+                log('请输入接收者ID和消息内容', 'error');
+                return;
+            }
+            
+            const data = {
+                type: 'send_message',
+                to_user_id: parseInt(toUserId),
+                content: content,
+                message_type: messageType
+            };
+            
+            ws.send(JSON.stringify(data));
+            log('消息已发送');
+            
+            // 清空消息内容
+            document.getElementById('messageContent').value = '';
+        }
+        
+        // 发送广播
+        function sendBroadcast() {
+            if (!isAuthenticated) {
+                log('请先进行身份认证', 'error');
+                return;
+            }
+            
+            const content = document.getElementById('broadcastContent').value;
+            if (!content) {
+                log('请输入广播内容', 'error');
+                return;
+            }
+            
+            const data = {
+                type: 'broadcast_notice',
+                content: content,
+                notice_type: 'system'
+            };
+            
+            ws.send(JSON.stringify(data));
+            log('广播已发送');
+            
+            // 清空广播内容
+            document.getElementById('broadcastContent').value = '';
+        }
+        
+        // 获取用户信息
+        function getUserInfo() {
+            if (!isAuthenticated) {
+                log('请先进行身份认证', 'error');
+                return;
+            }
+            
+            const userId = document.getElementById('userInfoId').value;
+            
+            const data = {
+                type: 'get_user_info',
+                user_id: userId ? parseInt(userId) : null
+            };
+            
+            ws.send(JSON.stringify(data));
+            log('正在获取用户信息...');
+        }
+        
+        // 记录日志
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            messageDiv.textContent = new Date().toLocaleString() + ': ' + message;
+            logDiv.appendChild(messageDiv);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        // 页面加载时自动连接
+        window.onload = function() {
+            connect();
+        };
+    </script>
+</body>
+</html>

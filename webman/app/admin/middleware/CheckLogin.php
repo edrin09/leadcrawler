@@ -1,0 +1,59 @@
+<?php
+
+namespace app\admin\middleware;
+
+use app\admin\services\annotation\MiddlewareAnnotation;
+use app\admin\traits\JumpTrait;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+use Webman\Http\Request;
+use Webman\Http\Response;
+use Webman\MiddlewareInterface;
+
+class CheckLogin implements MiddlewareInterface
+{
+    use JumpTrait;
+
+    /**
+     * @throws ReflectionException
+     */
+    public function process(Request $request, callable $handler): Response
+    {
+        $controller = $request->controller;
+        if (empty($controller)) return $handler($request);
+        $action = $request->action;
+        $classObj = new ReflectionClass($controller);
+        $properties = $classObj->getDefaultProperties();
+        // 整个控制器是否忽略登录
+        $ignoreLogin = $properties['ignoreLogin'] ?? false;
+        $adminUserInfo = session('admin');
+        if (!$ignoreLogin) {
+            $noNeedCheck = $properties['noNeedCheck'] ?? [];
+            if (in_array($action, $noNeedCheck)) {
+                return $handler($request);
+            }
+            $reflectionMethod = new ReflectionMethod($controller, $action);
+            $attributes = $reflectionMethod->getAttributes(MiddlewareAnnotation::class);
+            foreach ($attributes as $attribute) {
+                $annotation = $attribute->newInstance();
+                $_ignore = (array)$annotation->ignore;
+                // 控制器中的某个方法忽略登录
+                if (in_array('LOGIN', $_ignore)) return $handler($request);
+            }
+            if (empty($adminUserInfo)) {
+                return redirect(__url("/login"));
+//                return $this->responseView('请先登录后台', [], __url("/login"),0);
+            }
+            // 判断是否登录过期
+            $expireTime = $adminUserInfo['expire_time'];
+            if ($expireTime !== true && time() > $expireTime) {
+                $request->session()->forget('admin');
+                return redirect(__url("/login"));
+//                return $this->responseView('登录已过期，请重新登录', [], __url("/login"));
+            }
+        }
+        $request->adminUserInfo = $adminUserInfo ?: [];
+        return $handler($request);
+    }
+}

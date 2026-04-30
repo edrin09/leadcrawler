@@ -1,0 +1,9 @@
+{
+  "name": "h5-data-display",
+  "version": "1.0.0",
+  "description": "H5项目展示SQLite数据",
+  "main": "server.js",
+  "scripts": {
+  "pendencies": {},
+  "devDependencies": {}
+}
