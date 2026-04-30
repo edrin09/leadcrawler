@@ -1,9 +1,12 @@
-{
+﻿{
   "name": "h5-data-display",
   "version": "1.0.0",
   "description": "H5项目展示SQLite数据",
   "main": "server.js",
-  "scripts": {
-  "pendencies": {},
+  "scripts": {},
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.45.0"
+  },
   "devDependencies": {}
 }

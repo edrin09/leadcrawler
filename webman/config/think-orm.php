@@ -37,6 +37,26 @@ return [
                 'heartbeat_interval' => 50, // 心跳检测间隔，需要小于60秒
             ],
         ],
+        'sqlite' => [
+            // 数据库类型
+            'type' => 'sqlite',
+            // 数据库文件路径 - 使用绝对路径
+            'database' => env('DB_DATABASE', ''),
+            // 数据库表前缀
+            'prefix' => env('DB_PREFIX', ''),
+            // 数据库编码默认采用utf8
+            'charset' => 'utf8',
+            // 断线重连
+            'break_reconnect' => true,
+            // 连接池配置
+            'pool' => [
+                'max_connections' => 5,
+                'min_connections' => 1,
+                'wait_timeout' => 3,
+                'idle_timeout' => 60,
+                'heartbeat_interval' => 50,
+            ],
+        ],
     ],
     // 自定义分页类
     'paginator' => '',
