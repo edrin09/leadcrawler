@@ -2,63 +2,28 @@
 
 namespace app\api\service\business;
 
-use app\common\model\business\MallData;
+use app\api\service\CommService;
+use app\common\model\business\MallCustomer;
 
-class CrawlerService
+class CrawlerService extends CommService
 {
-    public function getList($page = 1, $limit = 10)
+    public function __construct($param, $user_info)
     {
-        $offset = ($page - 1) * $limit;
-
-        $list = MallData::query()
-            ->orderBy('id', 'desc')
-            ->offset($offset)
-            ->limit($limit)
-            ->get()
-            ->toArray();
-
-        $total = MallData::query()->count();
-
-        $data = [];
-        foreach ($list as $item) {
-            $data[] = [
-                'id' => $item['id'],
-                'title' => $item['title'],
-                'area' => $item['district'],
-                'price' => $item['price'],
-                'image_url' => $item['imageUrl'],
-                'link_url' => $item['detailUrl'],
-                'created_at' => $item['create_time']
-            ];
-        }
-
-        return [
-            'data' => $data,
-            'page' => $page,
-            'limit' => $limit,
-            'total' => $total,
-            'pages' => (int)ceil($total / $limit)
-        ];
+        parent::_initialize($param, $user_info);
     }
 
-    public function getById($id)
+    public function getInfo()
     {
-        $item = MallData::query()->find($id);
+        $this->data['current_time'] = get_datas();
+        $this->data['customer_expansion'] = MallCustomer::where('mall_customer.customer_id', $this->user_info->customer_id)
+            ->field('mall_customer.customer_id,openid,nickname,avatar')
+            ->withJoin(
+                [
+                    'expansion' => ['available_balance', 'frozen_balance', 'total_commission']
+                ]
+            )
+            ->find();
 
-        if (!$item) {
-            return null;
-        }
-
-        $item = $item->toArray();
-
-        return [
-            'id' => $item['id'],
-            'title' => $item['title'],
-            'area' => $item['district'],
-            'price' => $item['price'],
-            'image_url' => $item['imageUrl'],
-            'link_url' => $item['detailUrl'],
-            'created_at' => $item['create_time']
-        ];
+        return $this->data;
     }
 }
