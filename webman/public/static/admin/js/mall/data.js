@@ -52,10 +52,8 @@ define(["jquery", "easy-admin"], function ($, ea) {
                     //     field: 'status',
                     //     title: '状态',
                     //     width: 85,
-                    //     search: 'select',
                     //     templet: ea.table.switch
                     // },
-
                     // {
                     //     field: 'detailUrl',
                     //     minWidth: 80,
