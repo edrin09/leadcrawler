@@ -15,22 +15,6 @@ class LoginController extends ApiController
     }
 
     /*
-     * 验证码登录
-     */
-    public function captchaLogin()
-    {
-        $rule['username'] = 'require';
-        $rule['phone'] = 'require';
-        $rule['captcha'] = 'require|number';
-        $this->validate($this->param, $rule);
-
-        $MobileService = new MobileService($this->param);
-        $res = $MobileService->captchaLogin();
-
-        $this->render_success($res);
-    }
-
-    /*
      * 账号登录
      */
     public function accountLogin()

@@ -18,53 +18,54 @@ define(["jquery", "easy-admin"], function ($, ea) {
             ea.table.render({
                 init: init,
                 cols: [[
-                    {type: "checkbox"},
+                    // {type: "checkbox"},
+                    // {
+                    //     field: 'id',
+                    //     width: 80,
+                    //     title: 'ID',
+                    // },
                     {
-                        field: 'id',
+                        field: 'source',
                         width: 80,
-                        title: 'ID',
-                        searchOp: '='
+                        title: '来源',
+                        align: 'left',
+                        selectList: { '58': '58同城', 'anjuke': '安居客', 'goofish': '闲鱼' },
+                        templet: ea.table.select
                     },
                     {
-                        field: 'sort',
-                        width: 80,
-                        title: '排序',
-                        edit: 'text' +
-                            ''
-                    },
-                    {
-                        field: 'title',
-                        minWidth: 80,
-                        title: '分类名称'
-                    },
-                    {
-                        field: 'image',
-                        minWidth: 80,
-                        title: '分类图片',
-                        search: false,
-                        templet: ea.table.image
-                    },
-                    {
-                        field: 'remark',
-                        minWidth: 80,
-                        title: '备注信息'
-                    },
-                    {
-                        field: 'status',
-                        title: '状态',
-                        width: 85,
-                        search: 'select',
-                        selectList: {0: '禁用', 1: '启用'},
-                        templet: ea.table.switch
-                    },
-                    {
-                        field: 'create_time',
-                        minWidth: 80,
-                        title: '创建时间',
+                        field: 'crawler_time',
+                        width: 160,
+                        title: '采集时间',
+                        align: 'left',
                         search: 'range'
                     },
                     {
-                        width: 250,
+                        field: 'title',
+                        minWidth: 600,
+                        title: '标题',
+                        align: 'left',
+                        templet: function (d) {
+                            return '<a href="' + d.detailUrl + '" target="_blank" rel="noopener noreferrer">' + d.title + '</a>';
+                        }
+                    },
+                    // {
+                    //     field: 'status',
+                    //     title: '状态',
+                    //     width: 85,
+                    //     search: 'select',
+                    //     templet: ea.table.switch
+                    // },
+
+                    // {
+                    //     field: 'detailUrl',
+                    //     minWidth: 80,
+                    //     title: '详情',
+                    //     templet: function (d) {
+                    //         return '<a href="' + d.detailUrl + '" target="_blank" rel="noopener noreferrer" class="layui-btn layui-btn-xs layui-btn-primary">查看详情</a>';
+                    //     }
+                    // },
+                    {
+                        width: 100,
                         title: '操作',
                         templet: ea.table.tool,
                         fixed: 'right',

@@ -11,13 +11,8 @@ class MallCustomer extends BaseModel
     public $pk = 'customer_id';
 
     public $name = 'mall_customer';
-    public $noExportFields = ['password', 'tel', 'create_time', 'update_time'];
 
-    // 导出时不包含的字段
-    protected $defaultValues = [
-        'status' => 1, // 状态默认启用
-    ];
-
+    public $field = 'customer_id,status,username,create_time,update_time';
     // 设置添加表单的默认值
     private $expiry_time = 86400;
 
@@ -62,7 +57,7 @@ class MallCustomer extends BaseModel
         return $user_info;
     }
 
-    private function createUser($user, $app_id = '', $recommend_id = 0, $category = 'h5')
+    public function createUser($user, $app_id = '', $recommend_id = 0, $category = 'h5')
     {
         $this->app_id = $app_id;
         $this->openid = $user['openid'];
@@ -70,10 +65,12 @@ class MallCustomer extends BaseModel
         $this->avatar = $user['avatar'] ?? '';
         $this->nickname = $user['nickname'] ?? '';
         $this->phone_number = isset($user['phone_number']) ? trim($user['phone_number']) : 0;
+        $this->username = $user['username'] ?? '';
+        $this->password = $user['password'] ?? '';
         $this->sex = $user['sex'] ?? 0;
         $this->recommend_id = $recommend_id;
         $this->category = $category;
-        $this->login_time = time();
+//        $this->login_time = time();
         $this->token = get_guid_v4();
 
         $this->together(

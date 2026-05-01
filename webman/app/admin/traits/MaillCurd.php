@@ -28,8 +28,7 @@ trait MaillCurd
             }
             list($page, $limit, $where) = $this->buildTableParams();
             $listArr = $this->getList($where, false, true, $page, $limit);
-
-//            pre($listArr['list'], 'listArr');
+//d($listArr);
             return json($this->formatSuccessRrturn($listArr['count'], $listArr['list']));
         }
         return $this->fetch('admin/mall/comm/index');
@@ -45,11 +44,10 @@ trait MaillCurd
 //                ->fetchSql()
                 ->count();
 
-//            pre($count, 'count');
-//            dd($count);
+//            d($count);
         }
-
         $list = $this->model
+            ->field($this->model->field)
             ->withJoin($this->with_join, $this->join_type)
             ->when($this->business, function ($query) {
                 switch ($this->business) {
@@ -65,7 +63,7 @@ trait MaillCurd
             ->order($this->orderby, $this->sort)
 //            ->fetchSql()
             ->select();
-//        pre($list);
+//        d($list);
 
         if ($is_arr) {
             $list = $list->toArray();
@@ -90,15 +88,6 @@ trait MaillCurd
             $post = $request->post();
             $rule = [];
             $this->validate($post, $rule);
-
-            //获取名称的首字母 大写
-            if (isset($post['name'])) {
-                $post['initial'] = CommonTool::getChineseFirstLetter($post['name']);
-            }
-
-            // 保存科室关联
-//            $departmentIds = $post['department_ids'] ?? [];
-//            unset($post['department_ids']);
 
             Db::startTrans();
             try {

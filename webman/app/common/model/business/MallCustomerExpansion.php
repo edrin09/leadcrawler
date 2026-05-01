@@ -10,7 +10,7 @@ use support\think\Db;
 class MallCustomerExpansion extends BaseModel
 {
     public $name = 'mall_customer_expansion';
-    protected $pk = 'customer_id';
+    public $pk = 'customer_id';
     protected $type = [
         'apply_time' => 'timestamp:',
         'cash_time' => 'timestamp:',

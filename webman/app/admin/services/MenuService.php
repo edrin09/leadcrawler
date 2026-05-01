@@ -26,8 +26,8 @@ class MenuService
     public function getHomeInfo($homeId = 0): array
     {
         $data = SystemMenu::where('id', $homeId)
-            ->field('title,icon,href')->find();
-        !empty($data) && $data->href = __url('/' . $data->href);
+            ->field('title,icon,href,params')->find();
+        !empty($data) && $data->href = __url('/' . $data->href . '?' . $data->params);
         return $data->toArray();
     }
 

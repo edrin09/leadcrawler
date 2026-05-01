@@ -14,7 +14,18 @@
 
 use Webman\Route;
 
+Route::get('/h5', function () {
+    return file_get_contents(public_path() . '/h5/index.html');
+});
 
+Route::get('/h5/', function () {
+    return file_get_contents(public_path() . '/h5/index.html');
+});
+
+Route::group('/api', function () {
+    Route::get('/listings', 'app\api\controller\business\CrawlerController@index');
+    Route::get('/listings/{id}', 'app\api\controller\business\CrawlerController@show');
+});
 
 Route::group('/common', function () {
     Route::any('/[{path:.+}]', function ($request) {
