@@ -3,27 +3,11 @@
 namespace app\api\service\business;
 
 use app\api\service\CommService;
-use app\common\model\business\MallCustomer;
 
 class CrawlerService extends CommService
 {
     public function __construct($param, $user_info)
     {
         parent::_initialize($param, $user_info);
-    }
-
-    public function getInfo()
-    {
-        $this->data['current_time'] = get_datas();
-        $this->data['customer_expansion'] = MallCustomer::where('mall_customer.customer_id', $this->user_info->customer_id)
-            ->field('mall_customer.customer_id,openid,nickname,avatar')
-            ->withJoin(
-                [
-                    'expansion' => ['available_balance', 'frozen_balance', 'total_commission']
-                ]
-            )
-            ->find();
-
-        return $this->data;
     }
 }

@@ -25,7 +25,6 @@ class LoginController extends ApiController
 
         $MobileService = new MobileService($this->param);
         $res = $MobileService->accountLogin();
-
         return $this->render_success($res);
     }
 

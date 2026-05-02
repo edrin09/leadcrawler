@@ -3,47 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#333333">
-  <title>房源列表</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#4A90E2">
+  <title>数据平台</title>
+  <link rel="stylesheet" href="/h5/styles.css">
 </head>
 <body>
-  <header class="header">
-    <div class="header-content">
-      <h1 class="title">精选房源</h1>
-      <p class="subtitle">为您推荐优质房源</p>
-    </div>
-  </header>
-
-  <main class="main">
-    <div id="loading" class="loading">
-      <div class="spinner"></div>
-      <p>加载中...</p>
-    </div>
-
-    <div id="error" class="error hidden">
-      <div class="error-icon">!</div>
-      <p id="error-message">加载失败，请重试</p>
-      <button id="retry-btn" class="retry-btn">重新加载</button>
-    </div>
-
-    <div id="content" class="content hidden">
-      <div id="listings-container" class="listings-container"></div>
-      
-      <div id="load-more" class="load-more">
-        <button id="load-more-btn" class="load-more-btn">加载更多</button>
-      </div>
-      
-      <div id="no-more" class="no-more hidden">
-        <p>已加载全部数据</p>
-      </div>
-    </div>
-  </main>
-
-  <footer class="footer">
-    <p>© 2024 房源展示平台</p>
-  </footer>
-
-  <script src="app.js"></script>
+  <div id="app"></div>
+  <script type="module" src="/h5/app.js"></script>
 </body>
 </html>

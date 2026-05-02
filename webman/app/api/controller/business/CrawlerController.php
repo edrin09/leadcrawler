@@ -2,7 +2,7 @@
 
 namespace app\api\controller\business;
 
-use app\api\service\business\CrawlerService;
+use app\common\model\business\MallData;
 
 class CrawlerController extends ApiMallComm
 {
@@ -12,21 +12,6 @@ class CrawlerController extends ApiMallComm
     public function initialize()
     {
         parent::initialize();
-    }
-
-    /**
-     * 获取用户信息
-     */
-    public function getList()
-    {
-        $CrawlerService = new CrawlerService($this->param, $this->user_info);
-//        $customer_info = $CrawlerService->getInfo();
-//
-//        return $this->render_success($customer_info);
-    }
-
-    public function getInfo()
-    {
-
+        $this->model = new MallData();
     }
 }

@@ -81,14 +81,18 @@ class ApiController extends BaseController
         $this->original = $post_data = $this->request->post();
         $this->param = $post_data['parameter'] ?? [];
 
-        if (Env::get('encrypted.request_encrypted', false)) {
-            $decrypted_data = json_decode(encryptionDecryption($post_data['data'], true), true);
-            if (empty($decrypted_data)) {
-                throw new BusinessException('Decryption failed', 401);
-            }
-//            dd($decrypted_data);
-            $this->original = $decrypted_data;
-            $this->param = $decrypted_data['parameter'];
+        $rule['is_cache'] = 'boolean';
+        $rule['is_page'] = 'boolean';
+        $this->validate($this->param, $rule);
+
+
+        $this->is_cache = $this->param['is_cache'] ?? true;
+        $this->is_page = $this->param['is_page'] ?? false;
+        $this->page = $this->param['paging']['page'] ?? 1;
+        $this->limit = $this->param['paging']['limit'] ?? 10;
+
+        if (!empty($this->model) && is_string($this->model)) {
+            $this->model = new $this->model();
         }
 
         if (!in_array($this->request->action, $this->noNeedLogin)) {
@@ -98,15 +102,6 @@ class ApiController extends BaseController
 
             return true;
         }
-
-        $rule['is_cache'] = 'boolean';
-        $rule['is_page'] = 'boolean';
-        $this->validate($this->param, $rule);
-
-        $this->is_cache = $this->param['is_cache'] ?? true;
-        $this->is_page = $this->param['is_page'] ?? false;
-        $this->page = $this->param['paging']['page'] ?? 1;
-        $this->limit = $this->param['paging']['limit'] ?? 10;
 
         return true;
     }

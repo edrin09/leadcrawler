@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of webman.
  *
@@ -14,14 +15,17 @@
 
 use Webman\Route;
 
+// SPA fallback: 根路径下的 /login /list 等路径也返回 index.html
 Route::get('/h5/', function () {
     return file_get_contents(public_path() . '/h5/index.html');
 });
 
-Route::group('/api', function () {
-    Route::get('/login', 'app\api\controller\mobile\LoginController@accountLogin');
-    Route::get('/getList', 'app\api\controller\business\CrawlerController@getList');
-    Route::get('/getInfo', 'app\api\controller\business\CrawlerController@getInfo');
+Route::get('/login', function () {
+    return file_get_contents(public_path() . '/h5/index.html');
+});
+
+Route::get('/list', function () {
+    return file_get_contents(public_path() . '/h5/index.html');
 });
 
 Route::group('/common', function () {

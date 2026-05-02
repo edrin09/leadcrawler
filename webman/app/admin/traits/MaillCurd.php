@@ -242,15 +242,17 @@ trait MaillCurd
         $tableName = $this->model->getName();
         $tableName = CommonTool::humpToLine(lcfirst($tableName));
         $prefix = config('database.connections.mysql.prefix');
-        $dbList = Db::query("show full columns from {$prefix}{$tableName}");
+        
+        // 使用数据库无关的方式获取表字段信息
+        $dbList = Db::getFields($prefix . $tableName);
 
         $header = [];
         // 模型中设置禁止导出的字段
         $noExportFields = $this->model->noExportFields ?? [];
-        foreach ($dbList as $vo) {
-            $comment = !empty($vo['Comment']) ? $vo['Comment'] : $vo['Field'];
-            if (!in_array($vo['Field'], $noExportFields)) {
-                $header[] = [$comment, $vo['Field']];
+        foreach ($dbList as $fieldName => $fieldInfo) {
+            $comment = !empty($fieldInfo['comment']) ? $fieldInfo['comment'] : $fieldName;
+            if (!in_array($fieldName, $noExportFields)) {
+                $header[] = [$comment, $fieldName];
             }
         }
 

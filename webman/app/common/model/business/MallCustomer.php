@@ -88,8 +88,8 @@ class MallCustomer extends BaseModel
 
     public function findUser($where)
     {
-        $hidden = ['app_id', 'unionid', 'country_code', 'create_time', 'update_time'];
         $user_info = $this
+            ->field($this->field)
             ->withJoin(
                 [
                     'expansion' => [
@@ -100,8 +100,8 @@ class MallCustomer extends BaseModel
                 ]
             )
             ->where($where)
-            ->hidden($hidden)
             ->find();
+
         return $user_info;
     }
 

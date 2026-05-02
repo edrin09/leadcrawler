@@ -13,18 +13,7 @@ trait ApiCurd
     {
         $data = [];
 
-        $rule['business_id'] = 'number';
-        $rule['business_type'] = 'alphaDash';
-        $this->validate($this->param, $rule);
-
         $where['status'] = 1;
-        if (!empty($this->param['business_ids'])) {
-            $where[$this->model->pk] = $this->param['business_ids'];
-        }
-        if (!empty($this->param['business_type'])) {
-            $where['business_type'] = $this->param['business_type'];
-        }
-
         $orders_field = $this->orders_field ?? 'sort desc';
 
         if ($this->is_page) {
@@ -42,6 +31,7 @@ trait ApiCurd
 
             $data['paginated'] = $paginated;
         }
+
         $list = $this->model
             ->where($where)
             ->when($this->is_cache != false, function ($query) {
@@ -85,6 +75,23 @@ trait ApiCurd
         }
 
         return $data;
+    }
+
+    protected function renderSuccess($data = [], string $message = 'success')
+    {
+        $code = 200;
+        if (is_string($data)) {
+            $message = $data;
+            $data = [];
+        }
+
+        return $this->renderJson($code, $message, $data);
+    }
+
+    private function renderJson(string $code = null, string $message = '', $data = [])
+    {
+        $res = json(compact('code', 'message', 'data'));
+        return $res; // 返回Response对象，不直接发送
     }
 
     public function getInfo()
