@@ -53,10 +53,6 @@ class ApiController extends BaseController
      */
     protected function render_success($resdata = [])
     {
-        if (Env::get('encrypted.response_encrypted', false)) {
-            $resdata = encryptionDecryption(json_encode($resdata));
-        }
-//
         $render['code'] = 200;
         $render['meg'] = 'success';
         $render['data'] = $resdata;
