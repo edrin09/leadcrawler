@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="1">
+      <change afterPath="$PROJECT_DIR$/.idea/MarsCodeWorkspaceAppSettings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/php.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crawler/run/backup/58.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crawler/run/backup/anjuke.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crawler/run/backup/douyin.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crawler/run/backup/goofish.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/crawler/run/backup/xiaohongshu.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crawler/.env" beforeDir="false" afterPath="$PROJECT_DIR$/crawler/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/crawler/run/douyin.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crawler/run/xiaohongshu.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker/Dockerfile" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings" synchronizationState="SYNCHRONIZE">
+    <pharConfigPath>$PROJECT_DIR$/webman/composer.json</pharConfigPath>
+    <execution />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="MIXED" />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="PHP 8.3">
+    <include_path>
+      <path value="$PROJECT_DIR$/webman/vendor/markbaker/complex" />
+      <path value="$PROJECT_DIR$/webman/vendor/andrewdalpino/okbloomer" />
+      <path value="$PROJECT_DIR$/webman/vendor/markbaker/matrix" />
+      <path value="$PROJECT_DIR$/webman/vendor/composer" />
+      <path value="$PROJECT_DIR$/webman/vendor/joomla/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/fig/http-message-util" />
+      <path value="$PROJECT_DIR$/webman/vendor/nesbot/carbon" />
+      <path value="$PROJECT_DIR$/webman/vendor/qcloud/cos-sdk-v5" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-helper" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-container" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-validate" />
+      <path value="$PROJECT_DIR$/webman/vendor/yangweijie/webman-ignition" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-orm" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/process" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/translation" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/error-solutions" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/flare-client-php" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/backtrace" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/ignition" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/byte-stream" />
+      <path value="$PROJECT_DIR$/webman/vendor/wamania/php-stemmer" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/parser" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/parallel" />
+      <path value="$PROJECT_DIR$/webman/vendor/vlucas/phpdotenv" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/sync" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/amp" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/serialization" />
+      <path value="$PROJECT_DIR$/webman/vendor/nikic/fast-route" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/process" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/simple-cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/overtrue/socialite" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/type-resolver" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/clock" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/clock" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/reflection-common" />
+      <path value="$PROJECT_DIR$/webman/vendor/overtrue/wechat" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/reflection-docblock" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/support" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/macroable" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/view" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/collections" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-client" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/container" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/webman/vendor/monolog/monolog" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/bus" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/reflection" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/webman/vendor/rubix/tensor" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/pipeline" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/mime" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/conditionable" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/filesystem" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/psr-http-message-bridge" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/events" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/translation-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpoffice/phpspreadsheet" />
+      <path value="$PROJECT_DIR$/webman/vendor/rubix/ml" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php82" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/webman/vendor/voku/portable-ascii" />
+      <path value="$PROJECT_DIR$/webman/vendor/next/var-dumper" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/socket" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/uri" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/stream" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/dns" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/promise" />
+      <path value="$PROJECT_DIR$/webman/vendor/w7corp/easywechat" />
+      <path value="$PROJECT_DIR$/webman/vendor/aliyuncs/oss-sdk-php" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/event-loop" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/json-schema" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/http" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/console" />
+      <path value="$PROJECT_DIR$/webman/vendor/carbonphp/carbon-doctrine-types" />
+      <path value="$PROJECT_DIR$/webman/vendor/ezyang/htmlpurifier" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/command" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/guzzle-services" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/uri-template" />
+      <path value="$PROJECT_DIR$/webman/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/webman/vendor/nyholm/psr7-server" />
+      <path value="$PROJECT_DIR$/webman/vendor/webmozart/assert" />
+      <path value="$PROJECT_DIR$/webman/vendor/pimple/pimple" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/webman-framework" />
+      <path value="$PROJECT_DIR$/webman/vendor/graham-campbell/result-type" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/coroutine" />
+      <path value="$PROJECT_DIR$/webman/vendor/thenorthmemory/xml" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/workerman" />
+      <path value="$PROJECT_DIR$/webman/vendor/easywechat-composer/easywechat-composer" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/log" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/think-orm" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/blade" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/captcha" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/domain" />
+      <path value="$PROJECT_DIR$/webman/vendor/php-mcp/schema" />
+      <path value="$PROJECT_DIR$/webman/vendor/php-mcp/server" />
+      <path value="$PROJECT_DIR$/webman/vendor/evenement/evenement" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/annotations" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/inflector" />
+      <path value="$PROJECT_DIR$/webman/vendor/jianyan74/php-excel" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/lexer" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/deprecations" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpstan/phpdoc-parser" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpoption/phpoption" />
+      <path value="$PROJECT_DIR$/webman/vendor/maennchen/zipstream-php" />
+    </include_path>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="3D9nGaVqrimEUk06AUQEssmq466" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/wwwroot/crawler",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PS-241.18034.69" />
+        <option value="bundled-php-predefined-ba97393d7c68-48a1a656d44e-com.jetbrains.php.sharedIndexes-PS-241.18034.69" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="" />
+      <created>1777703057331</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1777703057331</updated>
+      <workItem from="1777703058346" duration="931000" />
+      <workItem from="1778468245313" duration="1307000" />
+    </task>
+    <task id="LOCAL-00001" summary="1">
+      <option name="closed" value="true" />
+      <created>1777703110764</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1777703110764</updated>
+    </task>
+    <task id="LOCAL-00002" summary="1">
+      <option name="closed" value="true" />
+      <created>1777703148687</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1777703148687</updated>
+    </task>
+    <task id="LOCAL-00003" summary="1">
+      <option name="closed" value="true" />
+      <created>1777704080431</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1777704080431</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="1" />
+    <option name="LAST_COMMIT_MESSAGE" value="1" />
+  </component>
+</project>
