@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="1">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crawler/.env" beforeDir="false" afterPath="$PROJECT_DIR$/crawler/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crawler/run/58.js" beforeDir="false" afterPath="$PROJECT_DIR$/crawler/run/58.js" afterDir="false" />
-    </list>
+    <list default="true" id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="1" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -182,7 +178,8 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/wwwroot/crawler",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/wwwroot/xh/yougou/service",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -209,6 +206,7 @@
       <updated>1777703057331</updated>
       <workItem from="1777703058346" duration="931000" />
       <workItem from="1778468245313" duration="1945000" />
+      <workItem from="1778481778178" duration="244000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
