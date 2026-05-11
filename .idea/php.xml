@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MessDetectorOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCSFixerOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PHPCodeSnifferOptionsConfiguration">
+    <option name="highlightLevel" value="WARNING" />
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PhpIncludePathManager">
+    <include_path>
+      <path value="$PROJECT_DIR$/webman/vendor/markbaker/complex" />
+      <path value="$PROJECT_DIR$/webman/vendor/andrewdalpino/okbloomer" />
+      <path value="$PROJECT_DIR$/webman/vendor/markbaker/matrix" />
+      <path value="$PROJECT_DIR$/webman/vendor/composer" />
+      <path value="$PROJECT_DIR$/webman/vendor/joomla/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/fig/http-message-util" />
+      <path value="$PROJECT_DIR$/webman/vendor/nesbot/carbon" />
+      <path value="$PROJECT_DIR$/webman/vendor/qcloud/cos-sdk-v5" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-helper" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-container" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-validate" />
+      <path value="$PROJECT_DIR$/webman/vendor/yangweijie/webman-ignition" />
+      <path value="$PROJECT_DIR$/webman/vendor/topthink/think-orm" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/finder" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-mbstring" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/process" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/translation" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/error-solutions" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/flare-client-php" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/backtrace" />
+      <path value="$PROJECT_DIR$/webman/vendor/spatie/ignition" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/byte-stream" />
+      <path value="$PROJECT_DIR$/webman/vendor/wamania/php-stemmer" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/parser" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/parallel" />
+      <path value="$PROJECT_DIR$/webman/vendor/vlucas/phpdotenv" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/sync" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/amp" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/serialization" />
+      <path value="$PROJECT_DIR$/webman/vendor/nikic/fast-route" />
+      <path value="$PROJECT_DIR$/webman/vendor/amphp/process" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/simple-cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/cache-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/overtrue/socialite" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/type-resolver" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/clock" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/clock" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/reflection-common" />
+      <path value="$PROJECT_DIR$/webman/vendor/overtrue/wechat" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpdocumentor/reflection-docblock" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/log" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-grapheme" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/support" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/event-dispatcher" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-client-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/macroable" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-normalizer" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/view" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-client" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php83" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/collections" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-client" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/container" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/http-factory" />
+      <path value="$PROJECT_DIR$/webman/vendor/monolog/monolog" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/deprecation-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/bus" />
+      <path value="$PROJECT_DIR$/webman/vendor/psr/container" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php84" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/reflection" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-intl-idn" />
+      <path value="$PROJECT_DIR$/webman/vendor/rubix/tensor" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/console" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-ctype" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/event-dispatcher-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php80" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/pipeline" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/mime" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/conditionable" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/var-exporter" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/filesystem" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/psr-http-message-bridge" />
+      <path value="$PROJECT_DIR$/webman/vendor/illuminate/events" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/translation-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/service-contracts" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/http-foundation" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/event-dispatcher" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/var-dumper" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpoffice/phpspreadsheet" />
+      <path value="$PROJECT_DIR$/webman/vendor/rubix/ml" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php82" />
+      <path value="$PROJECT_DIR$/webman/vendor/symfony/polyfill-php85" />
+      <path value="$PROJECT_DIR$/webman/vendor/voku/portable-ascii" />
+      <path value="$PROJECT_DIR$/webman/vendor/next/var-dumper" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/socket" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/uri" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/stream" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/dns" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/promise" />
+      <path value="$PROJECT_DIR$/webman/vendor/w7corp/easywechat" />
+      <path value="$PROJECT_DIR$/webman/vendor/aliyuncs/oss-sdk-php" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/event-loop" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/json-schema" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/http" />
+      <path value="$PROJECT_DIR$/webman/vendor/opis/string" />
+      <path value="$PROJECT_DIR$/webman/vendor/react/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/console" />
+      <path value="$PROJECT_DIR$/webman/vendor/carbonphp/carbon-doctrine-types" />
+      <path value="$PROJECT_DIR$/webman/vendor/ezyang/htmlpurifier" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/promises" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/command" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/psr7" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/guzzle" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/guzzle-services" />
+      <path value="$PROJECT_DIR$/webman/vendor/guzzlehttp/uri-template" />
+      <path value="$PROJECT_DIR$/webman/vendor/ralouphie/getallheaders" />
+      <path value="$PROJECT_DIR$/webman/vendor/nyholm/psr7-server" />
+      <path value="$PROJECT_DIR$/webman/vendor/webmozart/assert" />
+      <path value="$PROJECT_DIR$/webman/vendor/pimple/pimple" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/webman-framework" />
+      <path value="$PROJECT_DIR$/webman/vendor/graham-campbell/result-type" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/coroutine" />
+      <path value="$PROJECT_DIR$/webman/vendor/thenorthmemory/xml" />
+      <path value="$PROJECT_DIR$/webman/vendor/workerman/workerman" />
+      <path value="$PROJECT_DIR$/webman/vendor/easywechat-composer/easywechat-composer" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/log" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/think-orm" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/blade" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/cache" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/captcha" />
+      <path value="$PROJECT_DIR$/webman/vendor/webman/domain" />
+      <path value="$PROJECT_DIR$/webman/vendor/php-mcp/schema" />
+      <path value="$PROJECT_DIR$/webman/vendor/php-mcp/server" />
+      <path value="$PROJECT_DIR$/webman/vendor/evenement/evenement" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/annotations" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/inflector" />
+      <path value="$PROJECT_DIR$/webman/vendor/jianyan74/php-excel" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/lexer" />
+      <path value="$PROJECT_DIR$/webman/vendor/doctrine/deprecations" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpstan/phpdoc-parser" />
+      <path value="$PROJECT_DIR$/webman/vendor/phpoption/phpoption" />
+      <path value="$PROJECT_DIR$/webman/vendor/maennchen/zipstream-php" />
+    </include_path>
+  </component>
+  <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />
+  <component name="PhpStanOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+  <component name="PsalmOptionsConfiguration">
+    <option name="transferred" value="true" />
+  </component>
+</project>
