@@ -1,6 +1,7 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
-const path = require('path');
 const { saveData } = require('../utils/storageFactory');
 
 async function runAnjukeCrawler() {
@@ -47,8 +48,18 @@ async function runAnjukeCrawler() {
 
           let price = '';
           const priceMonthlyMatch = itemHtml.match(/<span class="price">(\d+)<\/span><span class="price-unit">元\/月<\/span>/);
+          const priceYearlyMatch = itemHtml.match(/<span class="price">(\d+)<\/span><span class="price-unit">元\/年<\/span>/);
+          const priceSimpleMatch = itemHtml.match(/<span class="price">([\d.]+)<\/span>/);
+          const priceTextMatch = itemHtml.match(/<span[^>]*class=".*price.*">([\d.]+)/);
+
           if (priceMonthlyMatch && priceMonthlyMatch[1]) {
             price = priceMonthlyMatch[1] + '元/月';
+          } else if (priceYearlyMatch && priceYearlyMatch[1]) {
+            price = priceYearlyMatch[1] + '元/年';
+          } else if (priceSimpleMatch && priceSimpleMatch[1]) {
+            price = priceSimpleMatch[1] + '元';
+          } else if (priceTextMatch && priceTextMatch[1]) {
+            price = priceTextMatch[1] + '元';
           } else if (itemHtml.includes('mianyi') || itemHtml.includes('面议')) {
             price = '面议';
           }
@@ -107,50 +118,69 @@ async function runAnjukeCrawler() {
   };
 
   try {
-    console.log('打开页面: https://xa.sydc.anjuke.com/sp-zu/ly2/');
-    await page.goto('https://xa.sydc.anjuke.com/sp-zu/ly2/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(3000);
+    const urlList = (process.env.CRAWL_ANJUKE_URLS || '').split(',').filter(url => url.trim());
 
-    console.log('开始分页采集数据...');
+    console.log('开始地址列表采集...');
+    console.log(`共 ${urlList.length} 个地址需要采集`);
     console.log('========================================');
 
-    let pageNumber = 1;
     let totalSaved = 0;
+    let totalPages = 0;
 
-    while (true) {
-      console.log(`\n===== 第 ${pageNumber} 页 =====`);
-      const pageData = await collectPageData();
+    for (let urlIndex = 0; urlIndex < urlList.length; urlIndex++) {
+      const currentUrl = urlList[urlIndex];
 
-      if (pageData.length === 0) {
-        console.log('本页无数据，停止采集');
-        break;
+      console.log(`\n===== 地址 ${urlIndex + 1}/${urlList.length}: ${currentUrl} =====`);
+      console.log('打开页面:', currentUrl);
+      await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForTimeout(3000);
+
+      let pageNumber = 1;
+      let hasNextPage = true;
+
+      while (hasNextPage) {
+        console.log(`\n------ 第 ${pageNumber} 页 ------`);
+        const pageData = await collectPageData();
+
+        if (pageData.length === 0) {
+          console.log('本页无数据');
+          break;
+        }
+
+        console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
+
+        const saveResult = await saveData(pageData);
+        const savedCount = saveResult.successCount;
+        totalSaved += savedCount;
+
+        if (savedCount === 0) {
+          console.log('无新数据，跳过后续页面');
+          break;
+        }
+
+        hasNextPage = await clickNextPage();
+        if (hasNextPage) {
+          const randomWait = Math.floor(Math.random() * 5) + 3;
+          console.log(`等待 ${randomWait} 秒后采集下一页...`);
+          await page.waitForTimeout(randomWait * 1000);
+          pageNumber++;
+          totalPages++;
+        } else {
+          console.log('已到达最后一页');
+        }
       }
 
-      console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
+      totalPages += pageNumber;
+      console.log(`地址 ${urlIndex + 1} 采集完成`);
 
-      const saveResult = await saveData(pageData);
-      const savedCount = saveResult.successCount;
-      totalSaved += savedCount;
-
-      if (savedCount === 0) {
-        console.log('无新数据，停止采集');
-        break;
+      if (urlIndex < urlList.length - 1) {
+        const waitBetweenUrls = Math.floor(Math.random() * 8) + 5;
+        console.log(`等待 ${waitBetweenUrls} 秒后采集下一个地址...`);
+        await page.waitForTimeout(waitBetweenUrls * 1000);
       }
-
-      const hasNextPage = await clickNextPage();
-      if (!hasNextPage) {
-        console.log('已到达最后一页，采集完成');
-        break;
-      }
-
-      const randomWait = Math.floor(Math.random() * 5) + 3;
-      console.log(`等待 ${randomWait} 秒后采集下一页...`);
-      await page.waitForTimeout(randomWait * 1000);
-
-      pageNumber++;
     }
 
-    console.log(`\n成功采集并保存 ${totalSaved} 条新数据（共 ${pageNumber} 页）`);
+    console.log(`\n成功采集并保存 ${totalSaved} 条新数据（共 ${totalPages} 页）`);
     console.log('========================================');
 
   } catch (error) {
