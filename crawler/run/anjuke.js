@@ -47,19 +47,13 @@ async function runAnjukeCrawler() {
           }
 
           let price = '';
-          const priceMonthlyMatch = itemHtml.match(/<span class="price">(\d+)<\/span><span class="price-unit">元\/月<\/span>/);
-          const priceYearlyMatch = itemHtml.match(/<span class="price">(\d+)<\/span><span class="price-unit">元\/年<\/span>/);
-          const priceSimpleMatch = itemHtml.match(/<span class="price">([\d.]+)<\/span>/);
-          const priceTextMatch = itemHtml.match(/<span[^>]*class=".*price.*">([\d.]+)/);
+          const priceMonthlyMatch = itemHtml.match(/<div[^>]*class="price-monthly"[^>]*>[\s\S]*?<span class="price">([\d.]+)<\/span>\s*<span class="price-unit">([^<]+)<\/span>/);
+          const priceSimpleMatch = itemHtml.match(/<span class="price">([\d.]+)<\/span>\s*<span class="price-unit">([^<]+)<\/span>/);
 
-          if (priceMonthlyMatch && priceMonthlyMatch[1]) {
-            price = priceMonthlyMatch[1] + '元/月';
-          } else if (priceYearlyMatch && priceYearlyMatch[1]) {
-            price = priceYearlyMatch[1] + '元/年';
-          } else if (priceSimpleMatch && priceSimpleMatch[1]) {
-            price = priceSimpleMatch[1] + '元';
-          } else if (priceTextMatch && priceTextMatch[1]) {
-            price = priceTextMatch[1] + '元';
+          if (priceMonthlyMatch && priceMonthlyMatch[1] && priceMonthlyMatch[2]) {
+            price = priceMonthlyMatch[1] + priceMonthlyMatch[2];
+          } else if (priceSimpleMatch && priceSimpleMatch[1] && priceSimpleMatch[2]) {
+            price = priceSimpleMatch[1] + priceSimpleMatch[2];
           } else if (itemHtml.includes('mianyi') || itemHtml.includes('面议')) {
             price = '面议';
           }
