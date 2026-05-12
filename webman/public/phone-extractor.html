@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>店铺联系电话提取器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group textarea,
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group textarea:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            box-shadow: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 24px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-header h3 {
+            color: #333;
+            font-size: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .phone-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .phone-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 2px solid #e8e8e8;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .phone-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .phone-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .phone-tag {
+            font-size: 12px;
+            color: #667eea;
+            background: #f0f3ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .platforms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .platform-tag {
+            font-size: 12px;
+            padding: 4px 12px;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 4px;
+        }
+
+        .tip {
+            margin-top: 24px;
+            padding: 16px;
+            background: #fff7e6;
+            border-left: 4px solid #faad14;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #8c5a00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📞 店铺联系电话提取器</h1>
+            <p>集成美团、小红书、抖音、闲鱼等12个平台搜索</p>
+        </div>
+
+        <div class="content">
+            <div class="form-group">
+                <label>商铺页面URL（每行一个）</label>
+                <textarea id="urls" placeholder="https://xa.sydc.anjuke.com/sp-zu/d4477029405174798/"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>位置信息</label>
+                <input type="text" id="location" placeholder="如：西安未央区凤城十二路">
+            </div>
+
+            <div class="form-group">
+                <label>关键词</label>
+                <input type="text" id="keywords" placeholder="如：首创禧悦里 旺铺出租">
+            </div>
+
+            <button class="btn" id="extractBtn" onclick="extract()">
+                开始提取
+            </button>
+            <button class="btn btn-secondary" onclick="fillDemo()">
+                填充示例
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在搜索中，请稍候...</p>
+            </div>
+
+            <div class="result" id="result">
+                <div class="result-header">
+                    <h3>提取结果</h3>
+                    <div class="stats">
+                        <div class="stat">
+                            <span class="stat-value" id="phoneCount">0</span>
+                            <span>个电话</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value" id="elapsedTime">0</span>
+                            <span>秒</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="phone-list" id="phoneList"></div>
+
+                <div class="platforms">
+                    <span style="color: #999; font-size: 13px;">搜索平台：</span>
+                    <span class="platform-tag">58同城</span>
+                    <span class="platform-tag">安居客</span>
+                    <span class="platform-tag">房天下</span>
+                    <span class="platform-tag">贝壳找房</span>
+                    <span class="platform-tag">百度地图</span>
+                    <span class="platform-tag">高德地图</span>
+                    <span class="platform-tag">美团</span>
+                    <span class="platform-tag">小红书</span>
+                    <span class="platform-tag">抖音</span>
+                    <span class="platform-tag">闲鱼</span>
+                    <span class="platform-tag">大众点评</span>
+                    <span class="platform-tag">腾讯地图</span>
+                </div>
+            </div>
+
+            <div class="tip">
+                💡 提示：网站通常需要登录才能查看完整联系方式，建议直接访问页面并登录查看
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function extract() {
+            const btn = document.getElementById('extractBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+
+            const urls = document.getElementById('urls').value;
+            const location = document.getElementById('location').value;
+            const keywords = document.getElementById('keywords').value;
+
+            btn.disabled = true;
+            loading.classList.add('show');
+            result.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/phone/extract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ urls, location, keywords })
+                });
+
+                const data = await response.json();
+
+                if (data.code === 0) {
+                    displayResult(data.data);
+                } else {
+                    alert('提取失败：' + data.msg);
+                }
+            } catch (error) {
+                alert('请求失败：' + error.message);
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('show');
+            }
+        }
+
+        function displayResult(data) {
+            const result = document.getElementById('result');
+            const phoneList = document.getElementById('phoneList');
+            const phoneCount = document.getElementById('phoneCount');
+            const elapsedTime = document.getElementById('elapsedTime');
+
+            phoneCount.textContent = data.count;
+            elapsedTime.textContent = data.elapsed;
+
+            if (data.phones.length === 0) {
+                phoneList.innerHTML = '<div class="empty">未找到联系电话</div>';
+            } else {
+                phoneList.innerHTML = data.phones.map(phone => {
+                    let tag = '手机号';
+                    if (phone.startsWith('029')) tag = '西安固话';
+                    if (phone.startsWith('13') || phone.startsWith('15')) tag = '本地号';
+
+                    return `
+                        <div class="phone-item" onclick="copyPhone('${phone}')">
+                            <div class="phone-number">${phone}</div>
+                            <span class="phone-tag">${tag}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            result.classList.add('show');
+        }
+
+        function copyPhone(phone) {
+            navigator.clipboard.writeText(phone).then(() => {
+                alert('已复制：' + phone);
+            });
+        }
+
+        function fillDemo() {
+            document.getElementById('urls').value = 'https://xa.sydc.anjuke.com/sp-zu/d4477029405174798/';
+            document.getElementById('location').value = '未央';
+            document.getElementById('keywords').value = '乐居场小学门口房东旺铺直租';
+        }
+    </script>
+</body>
+</html>
