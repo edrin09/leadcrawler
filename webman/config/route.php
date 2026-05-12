@@ -14,20 +14,20 @@
  */
 
 use Webman\Route;
-use app\api\controller\PhoneExtractorController;
+use app\api\controller\business\PhoneExtractorController;
 
-// 电话提取器 API
-Route::group('/api/phone', function () {
-    Route::post('/extract', [PhoneExtractorController::class, 'extract']);
-    Route::post('/analyze', [PhoneExtractorController::class, 'analyze']);
-    Route::post('/search', [PhoneExtractorController::class, 'search']);
-    Route::post('/variations', [PhoneExtractorController::class, 'variations']);
-});
+// // 电话提取器 API
+// Route::group('/api/phone', function () {
+//     Route::post('/extract', [PhoneExtractorController::class, 'extract']);
+//     Route::post('/analyze', [PhoneExtractorController::class, 'analyze']);
+//     Route::post('/search', [PhoneExtractorController::class, 'search']);
+//     Route::post('/variations', [PhoneExtractorController::class, 'variations']);
+// });
 
-// 电话提取器前端页面
-Route::get('/phone-extractor', function () {
-    return file_get_contents(public_path() . '/phone-extractor.html');
-});
+// // 电话提取器前端页面
+// Route::get('/phone-extractor', function () {
+//     return file_get_contents(public_path() . '/phone-extractor.html');
+// });
 
 // SPA fallback: 根路径下的 /login /list 等路径也返回 index.html
 Route::get('/h5/', function () {

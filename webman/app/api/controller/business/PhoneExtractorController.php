@@ -1,6 +1,6 @@
 <?php
 
-namespace app\api\controller;
+namespace app\api\controller\business;
 
 use app\service\PhoneExtractorService;
 use support\Request;
@@ -9,7 +9,7 @@ use support\Response;
 /**
  * 电话提取器 API 控制器
  */
-class PhoneExtractorController
+class PhoneExtractorController extends ApiMallComm
 {
     protected PhoneExtractorService $service;
 
