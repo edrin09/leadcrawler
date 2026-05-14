@@ -1,6 +1,6 @@
 <?php
 
-namespace app\service;
+namespace app\common\service;
 
 /**
  * 店铺联系电话提取服务

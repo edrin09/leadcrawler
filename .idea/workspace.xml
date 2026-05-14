@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="1">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/app/api/controller/business/PhoneExtractorController.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/api/controller/business/PhoneExtractorController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/app/service/PhoneExtractorService.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/service/PhoneExtractorService.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/config/route.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/config/route.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/public/phone-extractor.html" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/phone-extractor.html" afterDir="false" />
-    </list>
+    <list default="true" id="05fee909-e41f-4ef9-a2e4-7ff010e31eb7" name="更改" comment="1" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -213,7 +207,7 @@
       <workItem from="1777703058346" duration="931000" />
       <workItem from="1778468245313" duration="1945000" />
       <workItem from="1778481778178" duration="244000" />
-      <workItem from="1778743460109" duration="1752000" />
+      <workItem from="1778743460109" duration="2102000" />
     </task>
     <task id="LOCAL-00001" summary="1">
       <option name="closed" value="true" />
