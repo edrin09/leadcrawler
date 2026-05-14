@@ -1,0 +1,10 @@
+{
+  "name": "crawler-scheduler",
+  "version": "1.0.0",
+  "description": "Task scheduler for crawler system",
+  "main": "scheduler.js",
+  "dependencies": {
+    "node-cron": "^3.0.3",
+    "node-fetch": "^2.7.0"
+  }
+}

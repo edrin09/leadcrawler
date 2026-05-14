@@ -22,9 +22,19 @@ class PhoneExtractorService
 
     protected array $headers = [
         'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language' => 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Referer' => 'https://www.baidu.com/',
+        'Accept-Encoding' => 'gzip, deflate, br',
+        'Cache-Control' => 'no-cache',
+        'Pragma' => 'no-cache',
+        'Sec-Ch-Ua' => '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        'Sec-Ch-Ua-Mobile' => '?0',
+        'Sec-Ch-Ua-Platform' => '"Windows"',
+        'Sec-Fetch-Dest' => 'document',
+        'Sec-Fetch-Mode' => 'navigate',
+        'Sec-Fetch-Site' => 'none',
+        'Sec-Fetch-User' => '?1',
+        'Upgrade-Insecure-Requests' => '1',
     ];
 
     protected array $platforms = [
@@ -136,6 +146,7 @@ class PhoneExtractorService
         $allBusinessNames = [];
         $allBusinessInfo = [];
         $allKeywords = [];
+        $allSearchKeywords = [];
         foreach ($allDetailResults as $dr) {
             if (!empty($dr['business_name'])) {
                 $allBusinessNames[] = $dr['business_name'];
@@ -149,6 +160,13 @@ class PhoneExtractorService
         }
         $allBusinessNames = array_unique($allBusinessNames);
         $allKeywords = array_unique($allKeywords);
+
+        foreach ($allCrossResults as $cr) {
+            if (!empty($cr['keyword'])) {
+                $allSearchKeywords[] = $cr['keyword'];
+            }
+        }
+        $allSearchKeywords = array_unique($allSearchKeywords);
 
         // ---- 可信度评分 ----
         $scoredPhones = [];
@@ -182,6 +200,7 @@ class PhoneExtractorService
             'business_names' => array_values($allBusinessNames),
             'business_info' => $allBusinessInfo,
             'keywords' => array_values(array_slice($allKeywords, 0, 10)),
+            'search_keywords' => array_values($allSearchKeywords),
             'detail_results' => $allDetailResults,
             'cross_platform_results' => $allCrossResults,
             'summary' => [
@@ -214,7 +233,29 @@ class PhoneExtractorService
                 'business_info' => [],
                 'keywords' => [],
                 'status' => 'fetch_failed',
+                'status_msg' => '页面抓取失败，请检查URL是否可访问',
+                'content_length' => 0,
+                'text_length' => 0,
             ];
+        }
+
+        $antiBotStatus = $this->detectAntiBot($content);
+        if ($antiBotStatus) {
+            return [
+                'url' => $url,
+                'phones' => [],
+                'business_name' => '',
+                'business_info' => [],
+                'keywords' => [],
+                'status' => 'antibot',
+                'status_msg' => $antiBotStatus,
+                'content_length' => strlen($content),
+                'text_length' => 0,
+            ];
+        }
+
+        if (strlen($content) < 30000) {
+            \support\Log::warning("Small page detected: url=$url, size=" . strlen($content) . ", preview=" . substr(strip_tags($content), 0, 500));
         }
 
         $text = strip_tags($content);
@@ -235,7 +276,43 @@ class PhoneExtractorService
             'business_info' => $businessInfo,
             'keywords' => $keywords,
             'status' => 'success',
+            'status_msg' => '页面解析成功',
+            'content_length' => strlen($content),
+            'text_length' => strlen($text),
+            'text_phones' => $phones,
+            'attr_phones' => $attrPhones,
+            'script_phones' => $scriptPhones,
         ];
+    }
+
+    /**
+     * 检测反爬/验证码页面
+     */
+    protected function detectAntiBot(string $html): string
+    {
+        $antiBotSignatures = [
+            '请输入验证码' => '页面需要验证码验证，当前IP已被目标站点反爬系统拦截',
+            '访问过于频繁' => '访问频率过高，当前IP已被目标站点限流',
+            '滑块验证' => '页面需要滑块验证，当前IP触发了反爬机制',
+            '人机验证' => '页面需要人机验证，当前IP被目标站点识别为爬虫',
+            '请点击按钮进行验证' => '页面要求点击验证，当前IP被反爬系统拦截',
+            '安全验证' => '页面触发安全验证，当前IP被目标站点拦截',
+            '请输入图形验证码' => '页面需要图形验证码，当前IP被反爬系统拦截',
+            'ISDCaptcha' => '页面触发58同城系反爬验证，当前IP已被拦截',
+            'NEcaptcha' => '页面触发58同城系反爬验证，当前IP已被拦截',
+        ];
+
+        foreach ($antiBotSignatures as $signature => $message) {
+            if (stripos($html, $signature) !== false) {
+                return $message;
+            }
+        }
+
+        if (strlen($html) < 8000 && preg_match('/验证|校验|频繁|拦截/i', $html)) {
+            return '页面内容异常（疑似反爬拦截），页面大小仅' . strlen($html) . '字节';
+        }
+
+        return '';
     }
 
     /**
@@ -248,15 +325,28 @@ class PhoneExtractorService
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->formatHeaders());
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         $content = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
+        $errno = curl_errno($ch);
         curl_close($ch);
 
-        return $error ? null : $content;
+        if ($error || $errno) {
+            \support\Log::warning("fetchPage failed: url=$url, errno=$errno, error=$error, httpCode=$httpCode");
+            return null;
+        }
+
+        if ($httpCode >= 400) {
+            \support\Log::warning("fetchPage HTTP error: url=$url, httpCode=$httpCode");
+            return null;
+        }
+
+        return $content;
     }
 
     /**
@@ -297,6 +387,14 @@ class PhoneExtractorService
     }
 
     /**
+     * 从文本中提取电话号码（公开方法，供计划任务调用）
+     */
+    public function extractPhonesFromText(string $text): array
+    {
+        return $this->extractPhones($text);
+    }
+
+    /**
      * 清洗电话号码格式
      */
     protected function cleanPhone(string $phone): ?string
@@ -323,11 +421,14 @@ class PhoneExtractorService
         if (str_starts_with($cleaned, '1') && strlen($cleaned) === 11) {
             $second = $cleaned[1];
             if (in_array($second, ['3', '4', '5', '6', '7', '8', '9'])) {
-                if (count(array_unique(str_split($cleaned))) > 2) {
+                if (count(array_unique(str_split($cleaned))) >= 2) {
                     return $cleaned;
                 }
             }
-        } elseif (str_starts_with($cleaned, '029') && (strlen($cleaned) === 11 || strlen($cleaned) === 12)) {
+            return null;
+        }
+
+        if (preg_match('/^0\d{2,3}\d{7,8}$/', $cleaned)) {
             return $cleaned;
         }
 

@@ -33,7 +33,7 @@ define(["jquery", "easy-admin"], function ($, ea) {
                         templet: ea.table.select
                     },
                     {
-                        field: 'crawler_time',
+                        field: 'create_time',
                         width: 160,
                         title: '采集时间',
                         align: 'left',

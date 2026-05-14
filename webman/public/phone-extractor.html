@@ -711,12 +711,54 @@
 
             // 关键词
             if (d.keywords && d.keywords.length > 0) {
-                html += '<div class="section-title">🔑 搜索关键词</div>';
+                html += '<div class="section-title">🔑 提取到的关键词</div>';
                 html += '<div class="keyword-list">';
                 d.keywords.forEach(kw => {
                     html += `<span class="keyword-tag">${kw}</span>`;
                 });
                 html += '</div>';
+            }
+
+            // 跨平台搜索关键词
+            if (d.search_keywords && d.search_keywords.length > 0) {
+                html += '<div class="section-title">🔍 跨平台搜索使用的关键词</div>';
+                html += '<div class="keyword-list">';
+                d.search_keywords.forEach(kw => {
+                    html += `<span class="keyword-tag" style="background:#fff3e0;color:#e65100">${kw}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // 详情页诊断信息
+            if (d.detail_results && d.detail_results.length > 0) {
+                html += '<div class="section-title">📊 详情页提取诊断</div>';
+                d.detail_results.forEach(dr => {
+                    let statusLabel, statusColor;
+                    if (dr.status === 'success') {
+                        statusLabel = '✅ 成功';
+                        statusColor = '#52c41a';
+                    } else if (dr.status === 'antibot') {
+                        statusLabel = '🛡️ 反爬拦截';
+                        statusColor = '#ff4d4f';
+                    } else {
+                        statusLabel = '❌ 失败';
+                        statusColor = '#ff4d4f';
+                    }
+                    html += `<div class="info-card">`;
+                    html += `<div style="font-weight:700;margin-bottom:8px;color:${statusColor}">${statusLabel} - ${dr.url}</div>`;
+                    if (dr.status_msg) {
+                        html += `<div style="padding:8px 12px;background:#fff2f0;border:1px solid #ffccc7;border-radius:6px;margin-bottom:8px;font-size:13px;color:#cf1322;">⚠️ ${dr.status_msg}</div>`;
+                    }
+                    if (dr.status === 'success') {
+                        html += `<div class="info-row"><span class="info-label">页面大小</span><span class="info-value">${(dr.content_length / 1024).toFixed(1)} KB</span></div>`;
+                        html += `<div class="info-row"><span class="info-label">文本长度</span><span class="info-value">${dr.text_length} 字符</span></div>`;
+                        html += `<div class="info-row"><span class="info-label">文本提取电话</span><span class="info-value">${dr.text_phones ? dr.text_phones.length : 0} 个 ${dr.text_phones ? '(' + dr.text_phones.join(', ') + ')' : ''}</span></div>`;
+                        html += `<div class="info-row"><span class="info-label">属性提取电话</span><span class="info-value">${dr.attr_phones ? dr.attr_phones.length : 0} 个 ${dr.attr_phones ? '(' + dr.attr_phones.join(', ') + ')' : ''}</span></div>`;
+                        html += `<div class="info-row"><span class="info-label">脚本提取电话</span><span class="info-value">${dr.script_phones ? dr.script_phones.length : 0} 个 ${dr.script_phones ? '(' + dr.script_phones.join(', ') + ')' : ''}</span></div>`;
+                        html += `<div class="info-row"><span class="info-label">最终有效电话</span><span class="info-value" style="color:#667eea;font-weight:700">${dr.phones ? dr.phones.length : 0} 个 ${dr.phones ? '(' + dr.phones.join(', ') + ')' : ''}</span></div>`;
+                    }
+                    html += `</div>`;
+                });
             }
 
             // 跨平台结果

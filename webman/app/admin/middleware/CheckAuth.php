@@ -43,7 +43,7 @@ class CheckAuth implements MiddlewareInterface
             if (!in_array($controller, $adminConfig['no_auth_controller']) && !in_array($controller, $adminConfig['no_auth_node'])) {
 
                 $check = $authService->checkNode($currentNode);
-                if (!$check) return ($request->isAjax() || $request->method() == 'POST') ? $this->error('无权限访问') : $this->responseView('无权限访问');
+//                if (!$check) return ($request->isAjax() || $request->method() == 'POST') ? $this->error('无权限访问') : $this->responseView('无权限访问');
             }
         }
         return $handler($request);

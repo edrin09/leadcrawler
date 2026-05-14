@@ -15,15 +15,24 @@
 
 use Webman\Route;
 use app\api\controller\business\PhoneExtractorController;
+use app\api\controller\business\PhoneManageController;
 
 // 电话提取器 API
 Route::group('/api/phone', function () {
     Route::post('/unified', [PhoneExtractorController::class, 'unified']);
+    Route::get('/list', [PhoneManageController::class, 'list']);
+    Route::post('/add', [PhoneManageController::class, 'add']);
+    Route::post('/delete', [PhoneManageController::class, 'delete']);
 });
 
 // 电话提取器前端页面
 Route::get('/phone-extractor', function () {
     return file_get_contents(public_path() . '/phone-extractor.html');
+});
+
+// 电话号码管理前端页面
+Route::get('/phone-manage', function () {
+    return file_get_contents(public_path() . '/phone-manage.html');
 });
 
 // SPA fallback: 根路径下的 /login /list 等路径也返回 index.html

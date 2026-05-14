@@ -14,7 +14,7 @@ class DataController extends MallComm
         $this->model = new MallData();
         $this->business = 'data';
 
-        $this->orderby = 'crawler_time';
+        $this->orderby = 'create_time';
 
         parent::initialize();
     }

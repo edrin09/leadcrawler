@@ -302,7 +302,7 @@ class ListView {
           </div>
           <div class="item-meta">
             <span>来源: ${item.source}</span>
-            <span>采集时间: ${item.crawler_time}</span>
+            <span>采集时间: ${item.create_time}</span>
           </div>
         </div>
       </div>
