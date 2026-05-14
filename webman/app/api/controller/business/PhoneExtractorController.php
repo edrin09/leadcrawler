@@ -11,130 +11,56 @@ use support\Response;
  */
 class PhoneExtractorController extends ApiMallComm
 {
-    protected PhoneExtractorService $service;
+    protected $noNeedLogin = ['unified'];
 
-    public function __construct()
+    public function initialize()
     {
-        $this->service = new PhoneExtractorService();
+        parent::initialize();
     }
 
     /**
-     * 提取电话
+     * 统一提取入口（推荐使用）
+     * 支持：单个URL / 采集数据 / 纯关键词搜索
+     * 自动完成详情页提取 + 跨平台检索 + 可信度评分排序
      */
-    public function extract(Request $request): Response
+    public function unified(Request $request): Response
     {
-        $urls = $request->post('urls', '');
+        $options = [];
+
+        $url = $request->post('url', '');
         $location = $request->post('location', '');
         $keywords = $request->post('keywords', '');
+        $crawlData = $request->post('crawl_data', null);
+        $timeout = $request->post('timeout', 10);
+        $maxPlatforms = $request->post('max_platforms', 6);
 
-        try {
-            $result = $this->service->run($urls, $location, $keywords);
-            return json([
-                'code' => 0,
-                'msg' => '提取成功',
-                'data' => $result
-            ]);
-        } catch (\Exception $e) {
-            return json([
-                'code' => 1,
-                'msg' => $e->getMessage(),
-                'data' => null
-            ]);
+        if ($url) $options['url'] = $url;
+        if ($location) $options['location'] = $location;
+        if ($keywords) $options['keywords'] = $keywords;
+        if ($crawlData) {
+            if (is_string($crawlData)) {
+                $crawlData = json_decode($crawlData, true) ?: [];
+            }
+            $options['crawl_data'] = $crawlData;
         }
-    }
+        $options['timeout'] = (int)$timeout;
+        $options['max_platforms'] = (int)$maxPlatforms;
 
-    /**
-     * 分析单个页面
-     */
-    public function analyze(Request $request): Response
-    {
-        $url = $request->post('url', '');
-
-        if (empty($url)) {
+        if (empty($options['url']) && empty($options['crawl_data']) && empty($options['keywords'])) {
             return json([
                 'code' => 1,
-                'msg' => '请提供URL',
+                'msg' => '请至少提供 url / crawl_data / keywords 之一',
                 'data' => null
             ]);
         }
 
-        try {
-            $phones = $this->service->analyzePage($url);
-            return json([
-                'code' => 0,
-                'msg' => '分析成功',
-                'data' => [
-                    'phones' => $phones,
-                    'count' => count($phones)
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return json([
-                'code' => 1,
-                'msg' => $e->getMessage(),
-                'data' => null
-            ]);
-        }
-    }
+        $service = new PhoneExtractorService();
 
-    /**
-     * 搜索平台
-     */
-    public function search(Request $request): Response
-    {
-        $keywords = $request->post('keywords', '');
-
-        if (empty($keywords)) {
-            return json([
-                'code' => 1,
-                'msg' => '请提供关键词',
-                'data' => null
-            ]);
-        }
-
-        try {
-            $phones = $this->service->searchPlatforms($keywords);
-            $sorted = $this->service->sortByRelevance($phones);
-            return json([
-                'code' => 0,
-                'msg' => '搜索成功',
-                'data' => [
-                    'phones' => $sorted,
-                    'count' => count($sorted)
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return json([
-                'code' => 1,
-                'msg' => $e->getMessage(),
-                'data' => null
-            ]);
-        }
-    }
-
-    /**
-     * 生成关键词变体
-     */
-    public function variations(Request $request): Response
-    {
-        $keywords = $request->post('keywords', '');
-
-        if (empty($keywords)) {
-            return json([
-                'code' => 1,
-                'msg' => '请提供关键词',
-                'data' => null
-            ]);
-        }
-
-        $variations = $this->service->generateKeywordVariations($keywords);
+        $result = $service->unifiedExtract($options);
         return json([
             'code' => 0,
-            'msg' => '获取成功',
-            'data' => [
-                'variations' => $variations,
-                'count' => count($variations)
-            ]
+            'msg' => '提取成功',
+            'data' => $result
         ]);
     }
 }

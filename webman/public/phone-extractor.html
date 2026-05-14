@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,11 +20,11 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
@@ -44,8 +45,41 @@
             font-size: 14px;
         }
 
-        .content {
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .tab {
+            padding: 14px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
             padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .form-group {
@@ -78,6 +112,12 @@
         .form-group textarea {
             min-height: 80px;
             resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
         }
 
         .btn {
@@ -113,6 +153,11 @@
         .btn-secondary:hover {
             background: #e0e0e0;
             box-shadow: none;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
         }
 
         .result {
@@ -174,12 +219,28 @@
             text-align: center;
             transition: all 0.2s;
             cursor: pointer;
+            position: relative;
         }
 
         .phone-item:hover {
             border-color: #667eea;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .phone-item.high-confidence {
+            border-color: #52c41a;
+            background: #f6ffed;
+        }
+
+        .phone-item.medium-confidence {
+            border-color: #faad14;
+            background: #fffbe6;
+        }
+
+        .phone-item.low-confidence {
+            border-color: #ff4d4f;
+            background: #fff2f0;
         }
 
         .phone-number {
@@ -195,6 +256,110 @@
             background: #f0f3ff;
             padding: 2px 8px;
             border-radius: 4px;
+        }
+
+        .credibility-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .credibility-badge.high {
+            background: #52c41a;
+        }
+
+        .credibility-badge.medium {
+            background: #faad14;
+        }
+
+        .credibility-badge.low {
+            background: #ff4d4f;
+        }
+
+        .score-bar {
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s;
+        }
+
+        .score-bar-fill.high {
+            background: #52c41a;
+        }
+
+        .score-bar-fill.medium {
+            background: #faad14;
+        }
+
+        .score-bar-fill.low {
+            background: #ff4d4f;
+        }
+
+        .source-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+            justify-content: center;
+        }
+
+        .source-tag {
+            font-size: 10px;
+            padding: 1px 6px;
+            background: #f0f0f0;
+            color: #888;
+            border-radius: 3px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-card .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .summary-card .card-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .summary-card.high .card-value {
+            color: #52c41a;
+        }
+
+        .summary-card.medium .card-value {
+            color: #faad14;
+        }
+
+        .summary-card.low .card-value {
+            color: #ff4d4f;
         }
 
         .empty {
@@ -224,7 +389,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .platforms {
@@ -251,110 +418,220 @@
             font-size: 13px;
             color: #8c5a00;
         }
+
+        .info-card {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-card h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px dashed #eee;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #999;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .cross-result {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .cross-result .platform-name {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 14px;
+        }
+
+        .cross-result .search-keyword {
+            font-size: 12px;
+            color: #999;
+            margin: 4px 0;
+        }
+
+        .cross-result .found-phones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .cross-result .found-phone {
+            font-size: 13px;
+            background: #f0f3ff;
+            color: #667eea;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .keyword-tag {
+            font-size: 12px;
+            padding: 4px 10px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 4px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+            margin: 20px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .batch-progress {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .batch-progress .progress-item {
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .progress-item.success {
+            border-left-color: #52c41a;
+        }
+
+        .progress-item.failed {
+            border-left-color: #ff4d4f;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>📞 店铺联系电话提取器</h1>
-            <p>集成美团、小红书、抖音、闲鱼等12个平台搜索</p>
+            <p>集成12个平台搜索 · 详情页深度提取 · 商户信息解析 · 跨平台关联检索</p>
         </div>
 
-        <div class="content">
+        <!-- 统一提取（推荐） -->
+        <div class="tab-content active">
             <div class="form-group">
-                <label>商铺页面URL（每行一个）</label>
-                <textarea id="urls" placeholder="https://xa.sydc.anjuke.com/sp-zu/d4477029405174798/"></textarea>
+                <label>详情页URL（单个）</label>
+                <input type="text" id="unified-url" placeholder="https://xa.58.com/shangpu/xxxxx.shtml">
             </div>
-
+            <div class="form-row">
+                <div class="form-group">
+                    <label>位置信息（可选）</label>
+                    <input type="text" id="unified-location" placeholder="如：西安未央区凤城十二路">
+                </div>
+                <div class="form-group">
+                    <label>额外关键词（可选）</label>
+                    <input type="text" id="unified-keywords" placeholder="如：旺铺出租">
+                </div>
+            </div>
             <div class="form-group">
-                <label>位置信息</label>
-                <input type="text" id="location" placeholder="如：西安未央区凤城十二路">
+                <label>采集数据JSON（可选，粘贴采集脚本输出的JSON）</label>
+                <textarea id="unified-crawlData" rows="4"
+                    placeholder='[{"title":"旺铺出租","detailUrl":"https://...","source":"58","district":"未央区","price":"5000元/月"}]'></textarea>
             </div>
-
-            <div class="form-group">
-                <label>关键词</label>
-                <input type="text" id="keywords" placeholder="如：首创禧悦里 旺铺出租">
-            </div>
-
-            <button class="btn" id="extractBtn" onclick="extract()">
-                开始提取
-            </button>
-            <button class="btn btn-secondary" onclick="fillDemo()">
-                填充示例
-            </button>
-
-            <div class="loading" id="loading">
+            <button class="btn" id="unifiedBtn" onclick="unifiedExtract()">🚀 一键提取</button>
+            <div class="loading" id="unified-loading">
                 <div class="spinner"></div>
-                <p>正在搜索中，请稍候...</p>
+                <p>正在提取中，包括详情页解析和跨平台检索...</p>
             </div>
-
-            <div class="result" id="result">
+            <div class="result" id="unified-result">
                 <div class="result-header">
-                    <h3>提取结果</h3>
-                    <div class="stats">
-                        <div class="stat">
-                            <span class="stat-value" id="phoneCount">0</span>
-                            <span>个电话</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-value" id="elapsedTime">0</span>
-                            <span>秒</span>
-                        </div>
-                    </div>
+                    <h3>提取结果（按可信度排序）</h3>
                 </div>
-
-                <div class="phone-list" id="phoneList"></div>
-
-                <div class="platforms">
-                    <span style="color: #999; font-size: 13px;">搜索平台：</span>
-                    <span class="platform-tag">58同城</span>
-                    <span class="platform-tag">安居客</span>
-                    <span class="platform-tag">房天下</span>
-                    <span class="platform-tag">贝壳找房</span>
-                    <span class="platform-tag">百度地图</span>
-                    <span class="platform-tag">高德地图</span>
-                    <span class="platform-tag">美团</span>
-                    <span class="platform-tag">小红书</span>
-                    <span class="platform-tag">抖音</span>
-                    <span class="platform-tag">闲鱼</span>
-                    <span class="platform-tag">大众点评</span>
-                    <span class="platform-tag">腾讯地图</span>
-                </div>
-            </div>
-
-            <div class="tip">
-                💡 提示：网站通常需要登录才能查看完整联系方式，建议直接访问页面并登录查看
+                <div class="summary-cards" id="unified-summary"></div>
+                <div id="unified-content"></div>
             </div>
         </div>
+
     </div>
 
     <script>
-        async function extract() {
-            const btn = document.getElementById('extractBtn');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
 
-            const urls = document.getElementById('urls').value;
-            const location = document.getElementById('location').value;
-            const keywords = document.getElementById('keywords').value;
+        // ========== 统一提取（推荐） ==========
+        async function unifiedExtract() {
+            const btn = document.getElementById('unifiedBtn');
+            const loading = document.getElementById('unified-loading');
+            const result = document.getElementById('unified-result');
 
             btn.disabled = true;
             loading.classList.add('show');
             result.classList.remove('show');
 
+            const body = {};
+            const url = document.getElementById('unified-url').value.trim();
+            const location = document.getElementById('unified-location').value.trim();
+            const keywords = document.getElementById('unified-keywords').value.trim();
+            const crawlData = document.getElementById('unified-crawlData').value.trim();
+
+            if (url) body.url = url;
+            if (location) body.location = location;
+            if (keywords) body.keywords = keywords;
+            if (crawlData) {
+                try { body.crawl_data = JSON.parse(crawlData); } catch (e) {
+                    alert('采集数据JSON格式错误：' + e.message);
+                    btn.disabled = false;
+                    loading.classList.remove('show');
+                    return;
+                }
+            }
+
+            if (!body.url && !body.crawl_data && !body.keywords) {
+                alert('请至少填写URL、采集数据或关键词之一');
+                btn.disabled = false;
+                loading.classList.remove('show');
+                return;
+            }
+
             try {
-                const response = await fetch('/api/phone/extract', {
+                const response = await fetch('/api/phone/unified', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ urls, location, keywords })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
                 });
-
                 const data = await response.json();
-
                 if (data.code === 0) {
-                    displayResult(data.data);
+                    renderUnifiedResult(data.data);
+                    result.classList.add('show');
                 } else {
                     alert('提取失败：' + data.msg);
                 }
@@ -366,46 +643,238 @@
             }
         }
 
-        function displayResult(data) {
-            const result = document.getElementById('result');
-            const phoneList = document.getElementById('phoneList');
-            const phoneCount = document.getElementById('phoneCount');
-            const elapsedTime = document.getElementById('elapsedTime');
+        function renderUnifiedResult(d) {
+            // 汇总卡片
+            const summary = document.getElementById('unified-summary');
+            summary.innerHTML = `
+                <div class="summary-card"><div class="card-value">${d.summary.total_phones}</div><div class="card-label">总电话数</div></div>
+                <div class="summary-card high"><div class="card-value">${d.summary.high_confidence}</div><div class="card-label">高可信度</div></div>
+                <div class="summary-card medium"><div class="card-value">${d.summary.medium_confidence}</div><div class="card-label">中可信度</div></div>
+                <div class="summary-card low"><div class="card-value">${d.summary.low_confidence}</div><div class="card-label">低可信度</div></div>
+                <div class="summary-card"><div class="card-value">${d.summary.detail_pages_processed}</div><div class="card-label">处理页面</div></div>
+                <div class="summary-card"><div class="card-value">${d.summary.cross_platform_searches}</div><div class="card-label">跨平台命中</div></div>
+                <div class="summary-card"><div class="card-value">${d.summary.elapsed}s</div><div class="card-label">耗时</div></div>
+            `;
 
-            phoneCount.textContent = data.count;
-            elapsedTime.textContent = data.elapsed;
+            const container = document.getElementById('unified-content');
+            let html = '';
 
-            if (data.phones.length === 0) {
-                phoneList.innerHTML = '<div class="empty">未找到联系电话</div>';
-            } else {
-                phoneList.innerHTML = data.phones.map(phone => {
-                    let tag = '手机号';
-                    if (phone.startsWith('029')) tag = '西安固话';
-                    if (phone.startsWith('13') || phone.startsWith('15')) tag = '本地号';
-
-                    return `
-                        <div class="phone-item" onclick="copyPhone('${phone}')">
-                            <div class="phone-number">${phone}</div>
-                            <span class="phone-tag">${tag}</span>
-                        </div>
-                    `;
-                }).join('');
+            // 商户名称
+            if (d.business_names && d.business_names.length > 0) {
+                html += '<div class="section-title">🏢 商户名称</div>';
+                d.business_names.forEach(name => {
+                    html += `<div class="info-card"><div style="font-size:16px;font-weight:700;color:#333;">${name}</div></div>`;
+                });
             }
 
-            result.classList.add('show');
+            // 电话列表（按可信度排序）
+            if (d.phones && d.phones.length > 0) {
+                html += '<div class="section-title">📞 联系电话（按可信度从高到低排序）</div>';
+                html += '<div class="phone-list">';
+                d.phones.forEach(p => {
+                    const levelLabel = { high: '高可信', medium: '中可信', low: '低可信' };
+                    const typeLabel = { mobile: '手机', local_landline: '本地固话', landline: '固话', hotline: '热线', other: '其他' };
+                    const cls = p.level + '-confidence';
+                    html += `<div class="phone-item ${cls}" onclick="copyPhone('${p.phone}')">`;
+                    html += `<span class="credibility-badge ${p.level}">${p.score}分</span>`;
+                    html += `<div class="phone-number">${p.phone}</div>`;
+                    html += `<span class="phone-tag">${typeLabel[p.type] || p.type}</span>`;
+                    html += `<span class="phone-tag" style="margin-left:4px;background:${p.level === 'high' ? '#f6ffed' : p.level === 'medium' ? '#fffbe6' : '#fff2f0'};color:${p.level === 'high' ? '#52c41a' : p.level === 'medium' ? '#faad14' : '#ff4d4f'}">${levelLabel[p.level]}</span>`;
+                    html += `<div class="score-bar"><div class="score-bar-fill ${p.level}" style="width:${p.score}%"></div></div>`;
+                    html += `<div class="source-tags">`;
+                    p.sources.forEach(s => {
+                        html += `<span class="source-tag">${s}</span>`;
+                    });
+                    html += `<span class="source-tag" style="background:#e8f5e9;color:#2e7d32">${p.source_count}个来源</span>`;
+                    html += `</div></div>`;
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="empty">未找到联系电话</div>';
+            }
+
+            // 工商信息
+            if (d.business_info && Object.keys(d.business_info).length > 0) {
+                html += '<div class="section-title">📋 工商注册信息</div>';
+                html += '<div class="info-card">';
+                const labels = {
+                    credit_code: '统一社会信用代码', license_no: '营业执照注册号',
+                    org_code: '组织机构代码', legal_person: '法定代表人',
+                    registered_capital: '注册资本', establish_date: '成立日期',
+                    address: '经营地址', business_scope: '经营范围', tax_no: '纳税人识别号'
+                };
+                for (const [key, value] of Object.entries(d.business_info)) {
+                    html += `<div class="info-row"><span class="info-label">${labels[key] || key}</span><span class="info-value">${value}</span></div>`;
+                }
+                html += '</div>';
+            }
+
+            // 关键词
+            if (d.keywords && d.keywords.length > 0) {
+                html += '<div class="section-title">🔑 搜索关键词</div>';
+                html += '<div class="keyword-list">';
+                d.keywords.forEach(kw => {
+                    html += `<span class="keyword-tag">${kw}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // 跨平台结果
+            if (d.cross_platform_results && d.cross_platform_results.length > 0) {
+                html += '<div class="section-title">🔗 跨平台检索详情</div>';
+                d.cross_platform_results.forEach(cr => {
+                    html += `<div class="cross-result">`;
+                    html += `<div class="platform-name">${cr.platform}</div>`;
+                    html += `<div class="search-keyword">搜索词：${cr.keyword} | 找到 ${cr.count} 个电话</div>`;
+                    html += `<div class="found-phones">`;
+                    cr.phones.forEach(p => {
+                        html += `<span class="found-phone" style="cursor:pointer" onclick="copyPhone('${p}')">${p}</span>`;
+                    });
+                    html += `</div></div>`;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderComprehensiveResult(d, containerId) {
+            const container = document.getElementById(containerId);
+            let html = '';
+
+            // 商户名称
+            if (d.business_name) {
+                html += `<div class="info-card"><h4>🏢 商户名称</h4><div style="font-size:16px;font-weight:700;color:#333;">${d.business_name}</div></div>`;
+            }
+
+            // 电话列表
+            if (d.phones && d.phones.length > 0) {
+                html += '<div class="section-title">📞 所有电话 (' + d.phone_count + '个)</div>';
+                html += '<div class="phone-list">';
+                d.phones.forEach(phone => {
+                    let tag = '手机号';
+                    if (phone.startsWith('029')) tag = '西安固话';
+                    html += `<div class="phone-item" onclick="copyPhone('${phone}')"><div class="phone-number">${phone}</div><span class="phone-tag">${tag}</span></div>`;
+                });
+                html += '</div>';
+            }
+
+            // 工商信息
+            if (d.business_info && Object.keys(d.business_info).length > 0) {
+                html += '<div class="section-title">📋 工商注册信息</div>';
+                html += '<div class="info-card">';
+                const labels = {
+                    credit_code: '统一社会信用代码',
+                    license_no: '营业执照注册号',
+                    org_code: '组织机构代码',
+                    legal_person: '法定代表人',
+                    registered_capital: '注册资本',
+                    establish_date: '成立日期',
+                    address: '经营地址',
+                    business_scope: '经营范围',
+                    tax_no: '纳税人识别号'
+                };
+                for (const [key, value] of Object.entries(d.business_info)) {
+                    html += `<div class="info-row"><span class="info-label">${labels[key] || key}</span><span class="info-value">${value}</span></div>`;
+                }
+                html += '</div>';
+            }
+
+            // 跨平台结果
+            if (d.cross_platform_results && d.cross_platform_results.length > 0) {
+                html += '<div class="section-title">🔗 跨平台关联检索结果 (' + d.cross_platform_count + '个命中)</div>';
+                d.cross_platform_results.forEach(cr => {
+                    html += `<div class="cross-result">`;
+                    html += `<div class="platform-name">${cr.platform}</div>`;
+                    html += `<div class="search-keyword">搜索词：${cr.keyword}</div>`;
+                    html += `<div class="found-phones">`;
+                    cr.phones.forEach(p => {
+                        html += `<span class="found-phone">${p}</span>`;
+                    });
+                    html += `</div></div>`;
+                });
+            }
+
+            // 关键词
+            if (d.keywords && d.keywords.length > 0) {
+                html += '<div class="section-title">🔑 搜索关键词</div>';
+                html += '<div class="keyword-list">';
+                d.keywords.forEach(kw => {
+                    html += `<span class="keyword-tag">${kw}</span>`;
+                });
+                html += '</div>';
+            }
+
+            if (!html) html = '<div class="empty">未提取到有效信息</div>';
+            container.innerHTML = html;
+        }
+
+        function renderCrossResults(results, containerId) {
+            const container = document.getElementById(containerId);
+            if (!results || results.length === 0) {
+                container.innerHTML = '<div class="empty">未找到关联结果</div>';
+                return;
+            }
+            let html = '';
+            results.forEach(r => {
+                html += `<div class="cross-result">`;
+                html += `<div class="platform-name">${r.platform}</div>`;
+                html += `<div class="search-keyword">搜索词：${r.keyword} | 找到 ${r.count} 个电话</div>`;
+                html += `<div class="found-phones">`;
+                r.phones.forEach(p => {
+                    html += `<span class="found-phone" style="cursor:pointer" onclick="copyPhone('${p}')">${p}</span>`;
+                });
+                html += `</div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderBatchResults(d, containerId) {
+            const container = document.getElementById(containerId);
+            let html = '';
+
+            // 汇总电话
+            if (d.all_phones && d.all_phones.length > 0) {
+                html += '<div class="section-title">📞 汇总所有电话 (' + d.total_phones + '个)</div>';
+                html += '<div class="phone-list">';
+                d.all_phones.forEach(phone => {
+                    let tag = '手机号';
+                    if (phone.startsWith('029')) tag = '西安固话';
+                    html += `<div class="phone-item" onclick="copyPhone('${phone}')"><div class="phone-number">${phone}</div><span class="phone-tag">${tag}</span></div>`;
+                });
+                html += '</div>';
+            }
+
+            // 逐条结果
+            if (d.results && d.results.length > 0) {
+                html += '<div class="section-title">📊 逐条处理详情 (' + d.processed_count + '/' + d.total_items + ')</div>';
+                d.results.forEach((r, i) => {
+                    const cls = r.status === 'success' ? 'success' : 'failed';
+                    html += `<div class="batch-progress"><div class="progress-item ${cls}">`;
+                    html += `<strong>#${i + 1}</strong> [${r.source || '未知来源'}] ${r.original_title || r.url}`;
+                    if (r.business_name) html += `<br>🏢 ${r.business_name}`;
+                    if (r.phones && r.phones.length > 0) {
+                        html += `<br>📞 ` + r.phones.map(p => `<span style="color:#667eea;cursor:pointer" onclick="copyPhone('${p}')">${p}</span>`).join(' / ');
+                    } else {
+                        html += `<br><span style="color:#999">未找到电话</span>`;
+                    }
+                    html += `</div></div>`;
+                });
+            }
+
+            if (!html) html = '<div class="empty">未提取到有效信息</div>';
+            container.innerHTML = html;
         }
 
         function copyPhone(phone) {
             navigator.clipboard.writeText(phone).then(() => {
-                alert('已复制：' + phone);
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 24px;border-radius:8px;font-size:14px;z-index:9999;';
+                toast.textContent = '已复制：' + phone;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
             });
-        }
-
-        function fillDemo() {
-            document.getElementById('urls').value = 'https://xa.sydc.anjuke.com/sp-zu/d4477029405174798/';
-            document.getElementById('location').value = '未央';
-            document.getElementById('keywords').value = '乐居场小学门口房东旺铺直租';
         }
     </script>
 </body>
+
 </html>
