@@ -20,6 +20,7 @@ use app\api\controller\business\PhoneManageController;
 // 电话提取器 API
 Route::group('/api/phone', function () {
     Route::post('/unified', [PhoneExtractorController::class, 'unified']);
+    Route::post('/debug', [PhoneExtractorController::class, 'debug']);
     Route::get('/list', [PhoneManageController::class, 'list']);
     Route::post('/add', [PhoneManageController::class, 'add']);
     Route::post('/delete', [PhoneManageController::class, 'delete']);

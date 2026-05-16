@@ -11,11 +11,59 @@ use support\Response;
  */
 class PhoneExtractorController extends ApiMallComm
 {
-    protected $noNeedLogin = ['unified'];
+    protected $noNeedLogin = ['unified', 'debug'];
 
     public function initialize()
     {
         parent::initialize();
+    }
+
+    public function debug(Request $request): Response
+    {
+        $url = $request->post('url', '');
+        if (!$url) {
+            return json(['code' => 1, 'msg' => '请提供 url', 'data' => null]);
+        }
+
+        $service = new PhoneExtractorService();
+        $ref = new \ReflectionClass($service);
+        $method = $ref->getMethod('fetchPage');
+        $method->setAccessible(true);
+
+        $content = $method->invoke($service, $url, 15);
+        if (!$content) {
+            return json(['code' => 1, 'msg' => '抓取失败', 'data' => null]);
+        }
+
+        $encoding = mb_detect_encoding($content, ['UTF-8', 'GBK', 'GB2312', 'ISO-8859-1'], true);
+        $utf8Content = $content;
+        if ($encoding && $encoding !== 'UTF-8') {
+            $utf8Content = mb_convert_encoding($content, 'UTF-8', $encoding);
+        }
+
+        $savePath = runtime_path() . '/debug_page_' . md5($url) . '.html';
+        file_put_contents($savePath, $content);
+
+        $text = strip_tags($utf8Content);
+        $phonePattern = '/1[3-9]\d{9}/';
+        preg_match_all($phonePattern, $text, $phoneMatches);
+        preg_match_all($phonePattern, $utf8Content, $rawPhoneMatches);
+
+        return json([
+            'code' => 0,
+            'msg' => 'ok',
+            'data' => [
+                'url' => $url,
+                'encoding' => $encoding ?: 'unknown',
+                'content_length' => strlen($content),
+                'text_length' => strlen($text),
+                'saved_to' => $savePath,
+                'text_phones' => array_values(array_unique($phoneMatches[0] ?? [])),
+                'raw_phones' => array_values(array_unique($rawPhoneMatches[0] ?? [])),
+                'text_preview' => mb_substr($text, 0, 500),
+                'html_preview' => substr($utf8Content, 0, 1000),
+            ]
+        ]);
     }
 
     /**

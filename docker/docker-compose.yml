@@ -1,0 +1,16 @@
+services:
+  # 统一容器：包含PHP Webman后台 + Node.js爬虫
+  crawler:
+    privileged: true
+    image: crawler:latest
+    container_name: crawler_platform
+    ports:
+      - "8787:8787" # Webman后台
+    volumes:
+      # 映射 webman 代码目录
+      - ../webman:/var/www/html
+      # 映射 crawler 代码目录
+      - ../crawler:/app/crawler
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped

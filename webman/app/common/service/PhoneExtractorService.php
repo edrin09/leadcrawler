@@ -258,6 +258,11 @@ class PhoneExtractorService
             \support\Log::warning("Small page detected: url=$url, size=" . strlen($content) . ", preview=" . substr(strip_tags($content), 0, 500));
         }
 
+        $encoding = mb_detect_encoding($content, ['UTF-8', 'GBK', 'GB2312', 'ISO-8859-1'], true);
+        if ($encoding && $encoding !== 'UTF-8' && $encoding !== 'ASCII') {
+            $content = mb_convert_encoding($content, 'UTF-8', $encoding);
+        }
+
         $text = strip_tags($content);
 
         $phones = $this->extractPhones($text);
@@ -329,6 +334,7 @@ class PhoneExtractorService
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->formatHeaders());
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
 
         $content = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
