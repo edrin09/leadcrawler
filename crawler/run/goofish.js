@@ -5,7 +5,8 @@ const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
 
 async function runGoofishCrawler() {
-  const browser = await chromium.launch({ headless: false });
+  const headlessMode = process.env.HEADLESS !== 'false';
+  const browser = await chromium.launch({ headless: headlessMode });
   const storageStatePath = path.join(__dirname, '../storage/goofish_storageState.json');
   const context = await browser.newContext({
     viewport: null,
