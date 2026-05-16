@@ -6,14 +6,46 @@ const { saveData } = require('../utils/storageFactory');
 
 async function runGoofishCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
-  const browser = await chromium.launch({ headless: headlessMode });
+  
+  const browserArgs = [
+    '--start-maximized',
+    '--disable-blink-features=AutomationControlled',
+    '--disable-web-security',
+    '--disable-features=VizDisplayCompositor',
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--disable-gpu',
+    '--window-size=1920,1080',
+    '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+  ];
+
+  const browser = await chromium.launch({ 
+    headless: headlessMode,
+    args: browserArgs,
+    ignoreDefaultArgs: ['--enable-automation']
+  });
+  
   const storageStatePath = path.join(__dirname, '../storage/goofish_storageState.json');
   const context = await browser.newContext({
-    viewport: null,
-    args: ['--start-maximized'],
+    viewport: { width: 1920, height: 1080 },
     geolocation: { latitude: 34.2658, longitude: 108.9549 },
     permissions: ['geolocation'],
-    storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined
+    storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined,
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+  });
+  
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => undefined,
+    });
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [1, 2, 3, 4, 5],
+    });
+    Object.defineProperty(navigator, 'languages', {
+      get: () => ['zh-CN', 'zh', 'en'],
+    });
   });
   const page = await context.newPage();
 
