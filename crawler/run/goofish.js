@@ -87,6 +87,173 @@ function extractPhones(text) {
     return phones.sort();
 }
 
+function stripHtmlTags(html) {
+    return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+               .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+               .replace(/<[^>]+>/g, ' ')
+               .replace(/&nbsp;/g, ' ')
+               .replace(/&amp;/g, '&')
+               .replace(/&lt;/g, '<')
+               .replace(/&gt;/g, '>')
+               .replace(/&quot;/g, '"')
+               .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
+               .replace(/\s+/g, ' ')
+               .trim();
+}
+
+const COMPANY_SUFFIXES = [
+    '有限公司', '有限责任公司', '集团有限公司', '股份有限公司',
+    '实业公司', '科技公司', '商贸公司', '餐饮公司', '管理公司',
+    '咨询公司', '服务公司', '发展公司', '投资公司', '置业公司',
+    '房地产公司', '物业公司', '装饰公司', '装修公司', '文化公司',
+    '传媒公司', '教育公司', '医疗公司', '医药公司', '食品公司',
+    '贸易公司', '电子商务公司', '网络公司', '信息公司', '软件公司',
+    '技术公司'
+];
+
+const SHOP_SUFFIXES = [
+    '店', '铺', '行', '馆', '坊', '社', '部', '中心',
+    '工作室', '经营部', '服务部', '商行', '商店', '商场', '超市',
+    '酒店', '饭店', '餐厅', '宾馆', '旅馆'
+];
+
+const ALL_SUFFIXES = [...COMPANY_SUFFIXES, ...SHOP_SUFFIXES];
+
+const COMPANY_REGEX = new RegExp(
+    `[\\u4e00-\\u9fa5]{2,20}(?:${COMPANY_SUFFIXES.join('|')})`,
+    'gu'
+);
+
+const SHOP_REGEX = new RegExp(
+    `[\\u4e00-\\u9fa5]{2,20}(?:${SHOP_SUFFIXES.join('|')})`,
+    'gu'
+);
+
+function extractCompanyNameFromText(text) {
+    const companyMatch = text.match(COMPANY_REGEX);
+    if (companyMatch) {
+        return companyMatch[0].trim();
+    }
+    
+    const shopMatch = text.match(SHOP_REGEX);
+    if (shopMatch) {
+        return shopMatch[0].trim();
+    }
+    
+    return null;
+}
+
+function extractBizName(text, html = '') {
+    const names = [];
+    
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch && titleMatch[1]) {
+        const candidate = extractCompanyNameFromText(titleMatch[1]);
+        if (candidate) {
+            names.push(candidate);
+        }
+    }
+    
+    const companyMatches = text.match(COMPANY_REGEX);
+    if (companyMatches) {
+        names.push(...companyMatches);
+    }
+    
+    const shopMatches = text.match(SHOP_REGEX);
+    if (shopMatches) {
+        names.push(...shopMatches);
+    }
+    
+    const uniqueNames = [...new Set(names)];
+    const filteredNames = uniqueNames.filter(n => {
+        return n.length >= 2 && !/^\d+[\d\s]*$/.test(n);
+    });
+    
+    for (const name of filteredNames) {
+        if (/(公司|有限|集团|股份)/u.test(name)) {
+            return name;
+        }
+    }
+    
+    return filteredNames[0] || '';
+}
+
+function extractBizInfo(text) {
+    const info = {};
+    
+    const creditCodeMatch = text.match(/(?:统一社会信用代码|统一信用代码|信用代码|统一代码|社会信用代码)(?:：|:)\s*([0-9A-Z]{18})/u);
+    if (creditCodeMatch) {
+        info.credit_code = creditCodeMatch[1];
+    }
+    
+    const licenseMatch = text.match(/(?:营业执照注册号|营业执照|注册号)(?:：|:)\s*(\d{15})/u);
+    if (licenseMatch) {
+        info.license_no = licenseMatch[1];
+    }
+    
+    const legalPersonMatch = text.match(/(?:法定代表人|法人代表|负责人)(?:：|:)\s*([^\n\r]{2,10})/u);
+    if (legalPersonMatch) {
+        info.legal_person = legalPersonMatch[1].trim();
+    }
+    
+    const capitalMatch = text.match(/(?:注册资本)(?:：|:)\s*([^\n\r]{2,30})/u);
+    if (capitalMatch) {
+        info.registered_capital = capitalMatch[1].trim();
+    }
+    
+    const addressMatch = text.match(/(?:住所|经营场所|注册地址|地址)(?:：|:)\s*([^\n\r]{5,80})/u);
+    if (addressMatch) {
+        info.address = addressMatch[1].trim();
+    }
+    
+    const scopeMatch = text.match(/(?:经营范围)(?:：|:)\s*([^\n\r]{10,200})/u);
+    if (scopeMatch) {
+        info.business_scope = scopeMatch[1].trim();
+    }
+    
+    return info;
+}
+
+function extractKeywords(text, businessName = '') {
+    const keywords = [];
+    
+    if (businessName) {
+        keywords.push(businessName);
+        let coreName = businessName;
+        for (const suffix of ALL_SUFFIXES) {
+            coreName = coreName.replace(new RegExp(suffix, 'u'), '');
+        }
+        coreName = coreName.trim();
+        if (coreName.length >= 2 && coreName !== businessName) {
+            keywords.push(coreName);
+        }
+    }
+    
+    const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch && titleMatch[1]) {
+        const title = stripHtmlTags(titleMatch[1]).trim();
+        const titleParts = title.split(/[_\-\|｜\s]+/u);
+        for (const part of titleParts) {
+            const trimmed = part.trim();
+            if (trimmed.length >= 3 && trimmed.length <= 20 && !/^\d+$/.test(trimmed)) {
+                keywords.push(trimmed);
+            }
+        }
+    }
+    
+    const uniqueKeywords = [...new Set(keywords)];
+    const filteredKeywords = uniqueKeywords.filter(kw => {
+        const trimmed = kw.trim();
+        return trimmed.length >= 2
+            && !/^\d+$/.test(trimmed)
+            && !['首页', '下一页', '上一页', '返回', '搜索', '登录', '注册'].includes(trimmed);
+    });
+    
+    filteredKeywords.sort((a, b) => b.length - a.length);
+    
+    return filteredKeywords.slice(0, 10);
+}
+
 async function runGoofishCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
   
@@ -367,17 +534,27 @@ async function runGoofishCrawler() {
         
         const pageContent = await newPage.content();
         const pageText = await newPage.textContent('body');
+        const strippedText = stripHtmlTags(pageContent);
         
-        const phones = extractPhones(pageText + pageContent);
+        const phones = extractPhones(strippedText + pageContent);
+        const businessName = extractBizName(strippedText, pageContent);
+        const businessInfo = extractBizInfo(strippedText);
+        const keywords = extractKeywords(strippedText, businessName);
         
         console.log(`  -> 找到 ${phones.length} 个手机号`);
         if (phones.length > 0) {
           console.log(`  -> ${phones.join(', ')}`);
         }
+        if (businessName) {
+          console.log(`  -> 商户名称: ${businessName}`);
+        }
         
         return {
           success: true,
           phones: phones,
+          business_name: businessName,
+          business_info: businessInfo,
+          keywords: keywords,
           content: pageContent,
           text: pageText
         };
@@ -386,6 +563,9 @@ async function runGoofishCrawler() {
         return {
           success: false,
           phones: [],
+          business_name: '',
+          business_info: {},
+          keywords: [],
           error: e.message
         };
       } finally {
@@ -396,6 +576,9 @@ async function runGoofishCrawler() {
       return {
         success: false,
         phones: [],
+        business_name: '',
+        business_info: {},
+        keywords: [],
         error: e.message
       };
     }
@@ -780,9 +963,9 @@ async function runGoofishCrawler() {
               imageUrl: item.imageUrl || item.image_url || '',
               detailUrl: item.detailUrl,
               source: item.source || 'goofish',
-              business_name: '',
-              keywords: [],
-              business_info: {},
+              business_name: detailResult.business_name || '',
+              keywords: detailResult.keywords || [],
+              business_info: detailResult.business_info || {},
               phone_count: phones.length,
               create_time: new Date(),
             };

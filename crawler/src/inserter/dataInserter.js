@@ -42,43 +42,42 @@ async function initTables() {
     try {
         const mallDataTable = `
             CREATE TABLE IF NOT EXISTS ed_mall_data (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(500),
-                district VARCHAR(200),
-                price VARCHAR(100),
-                image_url TEXT,
-                detail_url VARCHAR(1000),
-                source VARCHAR(100),
-                business_name VARCHAR(500),
-                keywords TEXT,
-                business_info TEXT,
-                phone_count INT DEFAULT 0,
-                create_time DATETIME,
+                id INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+                title TEXT COMMENT '标题',
+                district VARCHAR(200) COMMENT '区域',
+                price VARCHAR(100) COMMENT '价格',
+                image_url TEXT COMMENT '图片URL',
+                detail_url TEXT COMMENT '详情页URL',
+                source VARCHAR(100) COMMENT '数据来源',
+                business_name TEXT COMMENT '商户名称',
+                keywords TEXT COMMENT '关键词(JSON格式)',
+                business_info TEXT COMMENT '商户信息(JSON格式)',
+                phone_count INT DEFAULT 0 COMMENT '手机号数量',
+                create_time DATETIME COMMENT '创建时间',
                 INDEX idx_source (source),
                 INDEX idx_create_time (create_time),
                 UNIQUE KEY idx_detail_url (detail_url(512))
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商铺信息主表'
         `;
 
         const mallPhonesTable = `
             CREATE TABLE IF NOT EXISTS ed_mall_phones (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                mall_data_id INT,
-                phone VARCHAR(20) NOT NULL,
-                phone_type VARCHAR(20),
-                confidence_level VARCHAR(20),
-                confidence_score INT,
-                source_count INT,
-                sources TEXT,
-                mall_data_url VARCHAR(1000),
-                mall_data_title VARCHAR(500),
-                source_platform VARCHAR(100),
-                create_time DATETIME,
-                FOREIGN KEY (mall_data_id) REFERENCES ed_mall_data(id) ON DELETE CASCADE,
+                id INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+                mall_data_id INT COMMENT '关联的商铺ID',
+                phone VARCHAR(20) NOT NULL COMMENT '手机号',
+                phone_type VARCHAR(20) COMMENT '手机号类型',
+                confidence_level VARCHAR(20) COMMENT '置信度级别',
+                confidence_score INT COMMENT '置信度分数',
+                source_count INT COMMENT '来源数量',
+                sources TEXT COMMENT '来源信息(JSON格式)',
+                mall_data_url TEXT COMMENT '商铺详情页URL',
+                mall_data_title TEXT COMMENT '商铺标题',
+                source_platform TEXT COMMENT '数据来源平台',
+                create_time DATETIME COMMENT '创建时间',
                 INDEX idx_phone_mall (phone, mall_data_id),
                 INDEX idx_phone (phone),
                 INDEX idx_confidence (confidence_level, confidence_score)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商铺手机号表'
         `;
 
         await connection.execute(mallDataTable);
