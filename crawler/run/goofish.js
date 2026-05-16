@@ -3,6 +3,89 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
+const dataInserter = require('../src/inserter/dataInserter');
+
+const PHONE_PATTERNS = {
+    exact: [
+        /1[3-9]\d{9}/g,
+        /1[3-9]\d{2}[-.\s]?\d{4}[-.\s]?\d{4}/g,
+    ],
+    special: [
+        /0\d{2,3}[-.]?\d{7,8}/g,
+    ]
+};
+
+function cleanPhone(phone) {
+    let cleaned = phone.replace(/[-\s()（）·*.。_]/g, '');
+    
+    const invalidPatterns = [
+        /^0{2,}/,
+        /^1[012]/,
+        /^0123456789$/,
+        /^0+[1-9]0+$/,
+        /^\d{3,4}0{4,}$/,
+        /^0{3,}\d+$/,
+        /^400\d+$/,
+        /^800\d+$/,
+    ];
+    
+    for (const pattern of invalidPatterns) {
+        if (pattern.test(cleaned)) {
+            return null;
+        }
+    }
+    
+    if (cleaned.startsWith('1') && cleaned.length === 11) {
+        const second = cleaned[1];
+        if (['3', '4', '5', '6', '7', '8', '9'].includes(second)) {
+            const uniqueDigits = new Set(cleaned.split(''));
+            if (uniqueDigits.size >= 2) {
+                return cleaned;
+            }
+        }
+        return null;
+    }
+    
+    if (/^0\d{2,3}\d{7,8}$/.test(cleaned)) {
+        return cleaned;
+    }
+    
+    return null;
+}
+
+function extractPhones(text) {
+    const phones = [];
+    const seenPhones = new Set();
+    const separatedMobilePattern = /1[3-9]\d[-.\s]?\d{4}[-.\s]?\d{4}/g;
+    
+    for (const group of ['exact', 'special']) {
+        for (const pattern of PHONE_PATTERNS[group]) {
+            const matches = text.match(pattern);
+            if (matches) {
+                for (const match of matches) {
+                    const phone = cleanPhone(match);
+                    if (phone && !seenPhones.has(phone)) {
+                        phones.push(phone);
+                        seenPhones.add(phone);
+                    }
+                }
+            }
+        }
+    }
+    
+    const separatedMatches = text.match(separatedMobilePattern);
+    if (separatedMatches) {
+        for (const match of separatedMatches) {
+            const phone = cleanPhone(match);
+            if (phone && !seenPhones.has(phone)) {
+                phones.push(phone);
+                seenPhones.add(phone);
+            }
+        }
+    }
+    
+    return phones.sort();
+}
 
 async function runGoofishCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -264,6 +347,81 @@ async function runGoofishCrawler() {
     return data;
   };
 
+  const extractDetailPageWithBrowser = async (detailUrl) => {
+    try {
+      console.log(`  -> 正在访问详情页: ${detailUrl.substring(0, 50)}...`);
+      
+      const newPage = await context.newPage();
+      await newPage.setViewportSize({ width: 1920, height: 1080 });
+      
+      try {
+        await newPage.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await newPage.waitForTimeout(3000);
+        
+        await closePopupsOnPage(newPage);
+        
+        await newPage.evaluate(() => {
+          window.scrollBy(0, 500);
+        });
+        await newPage.waitForTimeout(1000);
+        
+        const pageContent = await newPage.content();
+        const pageText = await newPage.textContent('body');
+        
+        const phones = extractPhones(pageText + pageContent);
+        
+        console.log(`  -> 找到 ${phones.length} 个手机号`);
+        if (phones.length > 0) {
+          console.log(`  -> ${phones.join(', ')}`);
+        }
+        
+        return {
+          success: true,
+          phones: phones,
+          content: pageContent,
+          text: pageText
+        };
+      } catch (e) {
+        console.log(`  -> 访问详情页失败: ${e.message}`);
+        return {
+          success: false,
+          phones: [],
+          error: e.message
+        };
+      } finally {
+        await newPage.close();
+      }
+    } catch (e) {
+      console.log(`  -> 提取详情页异常: ${e.message}`);
+      return {
+        success: false,
+        phones: [],
+        error: e.message
+      };
+    }
+  };
+
+  const closePopupsOnPage = async (page) => {
+    try {
+      const closeSelectors = [
+        '[class*="login-modal"] [class*="close"]',
+        '[class*="modal"] [aria-label="关闭"]',
+        '[class*="close"]',
+        '.icon-close'
+      ];
+      for (const sel of closeSelectors) {
+        const els = page.locator(sel);
+        const count = await els.count();
+        for (let i = 0; i < count; i++) {
+          const el = els.nth(i);
+          if (await el.isVisible({ timeout: 500 }).catch(() => false)) {
+            await el.click({ force: true });
+            await page.waitForTimeout(300);
+          }
+        }
+      }
+    } catch (e) { }
+  };
 
 
   const clickNextPage = async () => {
@@ -573,6 +731,8 @@ async function runGoofishCrawler() {
         console.log('开始分页采集数据...');
         console.log('========================================');
 
+        await dataInserter.initPool();
+
         let pageNumber = 1;
 
         while (true) {
@@ -586,9 +746,81 @@ async function runGoofishCrawler() {
 
           console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-          const saveResult = await saveData(pageData);
-          const savedCount = saveResult.successCount;
-          totalSaved += savedCount;
+          let savedCount = 0;
+
+          for (let i = 0; i < pageData.length; i++) {
+            const item = pageData[i];
+            const title = item.title ? item.title.substring(0, 30) : '(无标题)';
+            console.log(`\n[${i + 1}/${pageData.length}] ${title}...`);
+
+            if (!item.detailUrl) {
+              console.log('  -> SKIP - 无详情URL');
+              continue;
+            }
+
+            const existingId = await dataInserter.checkMallDataExists(item.detailUrl);
+            if (existingId) {
+              console.log(`  -> 已存在于数据库 (id=${existingId})，跳过`);
+              continue;
+            }
+
+            const detailResult = await extractDetailPageWithBrowser(item.detailUrl);
+            const phones = detailResult.success ? detailResult.phones : [];
+
+            if (phones.length > 0) {
+              console.log(`  -> 找到 ${phones.length} 个手机号: ${phones.join(', ')}`);
+            } else {
+              console.log(`  -> 未找到手机号`);
+            }
+
+            const mallDataRecord = {
+              title: item.title || '',
+              district: item.district || '',
+              price: item.price || '',
+              imageUrl: item.imageUrl || item.image_url || '',
+              detailUrl: item.detailUrl,
+              source: item.source || 'goofish',
+              business_name: '',
+              keywords: [],
+              business_info: {},
+              phone_count: phones.length,
+              create_time: new Date(),
+            };
+
+            const insertResult = await dataInserter.insertMallData(mallDataRecord);
+            if (!insertResult.success) {
+              console.log(`  -> 插入数据库失败: ${insertResult.error}`);
+              continue;
+            }
+
+            const mallDataId = insertResult.insertId;
+
+            if (phones.length > 0) {
+              const phoneRecords = phones.map(phone => ({
+                mall_data_id: mallDataId,
+                phone: phone,
+                phone_type: phone.startsWith('1') ? 'mobile' : 'landline',
+                confidence_level: 'medium',
+                confidence_score: 50,
+                source_count: 1,
+                sources: [{ source: 'detail_page', url: item.detailUrl }],
+                mall_data_url: item.detailUrl,
+                mall_data_title: item.title || '',
+                source_platform: 'goofish',
+                create_time: new Date(),
+              }));
+
+              await dataInserter.insertPhoneRecords(phoneRecords);
+              await dataInserter.updateMallDataPhoneCount(mallDataId, phones.length);
+            }
+
+            savedCount++;
+            totalSaved++;
+            console.log(`  -> 保存到数据库成功 (id=${mallDataId}, phones=${phones.length})`);
+
+            const waitBetweenItems = Math.floor(Math.random() * 3) + 2;
+            await page.waitForTimeout(waitBetweenItems * 1000);
+          }
 
           if (savedCount === 0) {
             console.log('本页无新数据，停止采集');

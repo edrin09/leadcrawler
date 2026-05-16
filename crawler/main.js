@@ -14,12 +14,10 @@ async function runCrawlers() {
   console.log('58 爬虫:', getEnvBool('CRAWL_58') ? '启用' : '禁用');
   console.log('安居客爬虫:', getEnvBool('CRAWL_ANJUKE') ? '启用' : '禁用');
   console.log('Goofish 爬虫:', getEnvBool('CRAWL_GOOFISH') ? '启用' : '禁用');
-  console.log('小红书爬虫:', getEnvBool('CRAWL_XIAOHONGSHU') ? '启用' : '禁用');
-  console.log('抖音爬虫:', getEnvBool('CRAWL_DOUYIN') ? '启用' : '禁用');
+  // console.log('小红书爬虫:', getEnvBool('CRAWL_XIAOHONGSHU') ? '启用' : '禁用');
+  // console.log('抖音爬虫:', getEnvBool('CRAWL_DOUYIN') ? '启用' : '禁用');
   console.log('------------------------------');
   console.log('数据存储方式:', process.env.STORAGE_TYPE || 'csv');
-  console.log('数据库名称:', process.env.DATABASE_NAME || 'crawler_db');
-  console.log('数据表名称:', process.env.TABLE_NAME || 'data');
   console.log('==============================');
   console.log('\n开始加载爬虫脚本...');
 

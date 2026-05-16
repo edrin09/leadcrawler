@@ -102,12 +102,8 @@ APP_PORT=8787
 编辑 `crawler/.env` 文件：
 
 ```bash
-# 数据存储方式: csv, sqlite, mysql
-STORAGE_TYPE=sqlite
-
-# SQLite配置
-DATABASE_NAME=crawlerdb
-TABLE_NAME=ed_mall_data
+# 数据存储方式: csv, mysql
+STORAGE_TYPE=mysql
 
 # MySQL配置（当STORAGE_TYPE=mysql时使用）
 MYSQL_HOST=localhost

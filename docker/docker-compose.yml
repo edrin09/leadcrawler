@@ -7,9 +7,8 @@ services:
     ports:
       - "8787:8787" # Webman后台
     volumes:
-      # 映射 webman 代码目录
+      # 映射 webman和crawler 代码目录
       - ../webman:/var/www/html
-      # 映射 crawler 代码目录
       - ../crawler:/app/crawler
     environment:
       - TZ=Asia/Shanghai

@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const csvStorage = require('./saveCsv');
-const sqliteStorage = require('./saveSqlite');
 const mysqlStorage = require('./saveMysql');
 
 function getStorageType() {
@@ -18,24 +17,15 @@ function getTableName() {
 }
 
 async function saveData(data, options = {}) {
-const storageType = getStorageType();
-  
-console.log(`使用存储方式: ${storageType}`);
-  
-  if (storageType === 'sqlite') {
-    const dbName = options.databaseName || getDatabaseName();
-const tableName = options.tableName || getTableName();
-    
-    return await sqliteStorage.saveData(data, {
-      databaseName: dbName,
-      tableName: tableName,
-      outputDir: options.outputDir
-    });
-  } else if (storageType === 'mysql') {
+  const storageType = getStorageType();
+
+  console.log(`使用存储方式: ${storageType}`);
+
+  if (storageType === 'mysql') {
     const tableName = options.tableName || getTableName();
-    
+
     console.log(`MySQL存储 - 数据库: ${process.env.MYSQL_DATABASE}, 表名: ${tableName}`);
-    
+
     return await mysqlStorage.saveData(data, {
       tableName: tableName,
       host: options.host || process.env.MYSQL_HOST,
@@ -44,7 +34,9 @@ const tableName = options.tableName || getTableName();
       password: options.password || process.env.MYSQL_PASSWORD,
       database: options.database || process.env.MYSQL_DATABASE
     });
-  } else {
+  }
+
+  if (storageType === 'csv') {
     const count = csvStorage.saveData(data, options.outputDir);
     return {
       success: true,
@@ -62,6 +54,5 @@ module.exports = {
   getDatabaseName,
   getTableName,
   mysqlStorage,
-  sqliteStorage,
   csvStorage
 };

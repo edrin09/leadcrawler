@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
+const extractor = require('../src/index');
 
 async function runAnjukeCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -144,8 +145,12 @@ async function runAnjukeCrawler() {
 
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-        const saveResult = await saveData(pageData);
-        const savedCount = saveResult.successCount;
+        const saveResult = await extractor.extractAndSave(pageData, {
+            timeout: 10000,
+            maxPlatforms: 6,
+            saveToDb: true
+        });
+        const savedCount = saveResult.save.saved || 0;
         totalSaved += savedCount;
 
         if (savedCount === 0) {
