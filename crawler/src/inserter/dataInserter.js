@@ -64,8 +64,7 @@ async function initTables() {
             CREATE TABLE IF NOT EXISTS ed_mall_phones (
                 id INT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
                 mall_data_id INT COMMENT '关联的商铺ID',
-                phone VARCHAR(20) NOT NULL COMMENT '手机号',
-                phone_type VARCHAR(20) COMMENT '手机号类型',
+                phone VARCHAR(20) NOT NULL COMMENT '电话',
                 confidence_level VARCHAR(20) COMMENT '置信度级别',
                 confidence_score INT COMMENT '置信度分数',
                 source_count INT COMMENT '来源数量',
@@ -192,7 +191,6 @@ async function insertPhoneRecords(phoneRecords) {
                 const fieldMapping = {
                     mall_data_id: 'mall_data_id',
                     phone: 'phone',
-                    phone_type: 'phone_type',
                     confidence_level: 'confidence_level',
                     confidence_score: 'confidence_score',
                     source_count: 'source_count',
@@ -375,7 +373,6 @@ async function processAndSaveCrawlData(crawlData, extractorResult) {
                     phoneRecords.push({
                         mall_data_id: mallDataId,
                         phone: scoredPhone.phone,
-                        phone_type: scoredPhone.type || 'other',
                         confidence_level: scoredPhone.level || 'low',
                         confidence_score: scoredPhone.score || 0,
                         source_count: scoredPhone.source_count || 0,
@@ -461,9 +458,6 @@ async function getPhoneStatistics() {
                 SUM(CASE WHEN confidence_level = 'high' THEN 1 ELSE 0 END) as high_confidence,
                 SUM(CASE WHEN confidence_level = 'medium' THEN 1 ELSE 0 END) as medium_confidence,
                 SUM(CASE WHEN confidence_level = 'low' THEN 1 ELSE 0 END) as low_confidence,
-                SUM(CASE WHEN phone_type = 'mobile' THEN 1 ELSE 0 END) as mobile_count,
-                SUM(CASE WHEN phone_type = 'landline' THEN 1 ELSE 0 END) as landline_count,
-                SUM(CASE WHEN phone_type = 'local_landline' THEN 1 ELSE 0 END) as local_landline_count,
                 COUNT(DISTINCT phone) as unique_phones
             FROM ed_mall_phones
         `;

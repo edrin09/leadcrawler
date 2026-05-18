@@ -96,7 +96,6 @@ async function extractAndSave(crawlData, options = {}) {
                     const phoneRecords = detailInfo.phones.map(phone => ({
                         mall_data_id: mallDataId,
                         phone: phone,
-                        phone_type: unifiedExtractor.classifyPhoneType(phone),
                         confidence_level: 'medium',
                         confidence_score: 50,
                         source_count: 1,

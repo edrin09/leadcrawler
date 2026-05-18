@@ -6,257 +6,257 @@ const { saveData } = require('../utils/storageFactory');
 const dataInserter = require('../src/inserter/dataInserter');
 
 const PHONE_PATTERNS = {
-    exact: [
-        /1[3-9]\d{9}/g,
-        /1[3-9]\d{2}[-.\s]?\d{4}[-.\s]?\d{4}/g,
-    ],
-    special: [
-        /0\d{2,3}[-.]?\d{7,8}/g,
-    ]
+  exact: [
+    /1[3-9]\d{9}/g,
+    /1[3-9]\d{2}[-.\s]?\d{4}[-.\s]?\d{4}/g,
+  ],
+  special: [
+    /0\d{2,3}[-.]?\d{7,8}/g,
+  ]
 };
 
 function cleanPhone(phone) {
-    let cleaned = phone.replace(/[-\s()（）·*.。_]/g, '');
-    
-    const invalidPatterns = [
-        /^0{2,}/,
-        /^1[012]/,
-        /^0123456789$/,
-        /^0+[1-9]0+$/,
-        /^\d{3,4}0{4,}$/,
-        /^0{3,}\d+$/,
-        /^400\d+$/,
-        /^800\d+$/,
-    ];
-    
-    for (const pattern of invalidPatterns) {
-        if (pattern.test(cleaned)) {
-            return null;
-        }
+  let cleaned = phone.replace(/[-\s()（）·*.。_]/g, '');
+
+  const invalidPatterns = [
+    /^0{2,}/,
+    /^1[012]/,
+    /^0123456789$/,
+    /^0+[1-9]0+$/,
+    /^\d{3,4}0{4,}$/,
+    /^0{3,}\d+$/,
+    /^400\d+$/,
+    /^800\d+$/,
+  ];
+
+  for (const pattern of invalidPatterns) {
+    if (pattern.test(cleaned)) {
+      return null;
     }
-    
-    if (cleaned.startsWith('1') && cleaned.length === 11) {
-        const second = cleaned[1];
-        if (['3', '4', '5', '6', '7', '8', '9'].includes(second)) {
-            const uniqueDigits = new Set(cleaned.split(''));
-            if (uniqueDigits.size >= 2) {
-                return cleaned;
-            }
-        }
-        return null;
-    }
-    
-    if (/^0\d{2,3}\d{7,8}$/.test(cleaned)) {
+  }
+
+  if (cleaned.startsWith('1') && cleaned.length === 11) {
+    const second = cleaned[1];
+    if (['3', '4', '5', '6', '7', '8', '9'].includes(second)) {
+      const uniqueDigits = new Set(cleaned.split(''));
+      if (uniqueDigits.size >= 2) {
         return cleaned;
+      }
     }
-    
     return null;
+  }
+
+  if (/^0\d{2,3}\d{7,8}$/.test(cleaned)) {
+    return cleaned;
+  }
+
+  return null;
 }
 
 function extractPhones(text) {
-    const phones = [];
-    const seenPhones = new Set();
-    const separatedMobilePattern = /1[3-9]\d[-.\s]?\d{4}[-.\s]?\d{4}/g;
-    
-    for (const group of ['exact', 'special']) {
-        for (const pattern of PHONE_PATTERNS[group]) {
-            const matches = text.match(pattern);
-            if (matches) {
-                for (const match of matches) {
-                    const phone = cleanPhone(match);
-                    if (phone && !seenPhones.has(phone)) {
-                        phones.push(phone);
-                        seenPhones.add(phone);
-                    }
-                }
-            }
+  const phones = [];
+  const seenPhones = new Set();
+  const separatedMobilePattern = /1[3-9]\d[-.\s]?\d{4}[-.\s]?\d{4}/g;
+
+  for (const group of ['exact', 'special']) {
+    for (const pattern of PHONE_PATTERNS[group]) {
+      const matches = text.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          const phone = cleanPhone(match);
+          if (phone && !seenPhones.has(phone)) {
+            phones.push(phone);
+            seenPhones.add(phone);
+          }
         }
+      }
     }
-    
-    const separatedMatches = text.match(separatedMobilePattern);
-    if (separatedMatches) {
-        for (const match of separatedMatches) {
-            const phone = cleanPhone(match);
-            if (phone && !seenPhones.has(phone)) {
-                phones.push(phone);
-                seenPhones.add(phone);
-            }
-        }
+  }
+
+  const separatedMatches = text.match(separatedMobilePattern);
+  if (separatedMatches) {
+    for (const match of separatedMatches) {
+      const phone = cleanPhone(match);
+      if (phone && !seenPhones.has(phone)) {
+        phones.push(phone);
+        seenPhones.add(phone);
+      }
     }
-    
-    return phones.sort();
+  }
+
+  return phones.sort();
 }
 
 function stripHtmlTags(html) {
-    return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
-               .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
-               .replace(/<[^>]+>/g, ' ')
-               .replace(/&nbsp;/g, ' ')
-               .replace(/&amp;/g, '&')
-               .replace(/&lt;/g, '<')
-               .replace(/&gt;/g, '>')
-               .replace(/&quot;/g, '"')
-               .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
-               .replace(/\s+/g, ' ')
-               .trim();
+  return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 const COMPANY_SUFFIXES = [
-    '有限公司', '有限责任公司', '集团有限公司', '股份有限公司',
-    '实业公司', '科技公司', '商贸公司', '餐饮公司', '管理公司',
-    '咨询公司', '服务公司', '发展公司', '投资公司', '置业公司',
-    '房地产公司', '物业公司', '装饰公司', '装修公司', '文化公司',
-    '传媒公司', '教育公司', '医疗公司', '医药公司', '食品公司',
-    '贸易公司', '电子商务公司', '网络公司', '信息公司', '软件公司',
-    '技术公司'
+  '有限公司', '有限责任公司', '集团有限公司', '股份有限公司',
+  '实业公司', '科技公司', '商贸公司', '餐饮公司', '管理公司',
+  '咨询公司', '服务公司', '发展公司', '投资公司', '置业公司',
+  '房地产公司', '物业公司', '装饰公司', '装修公司', '文化公司',
+  '传媒公司', '教育公司', '医疗公司', '医药公司', '食品公司',
+  '贸易公司', '电子商务公司', '网络公司', '信息公司', '软件公司',
+  '技术公司'
 ];
 
 const SHOP_SUFFIXES = [
-    '店', '铺', '行', '馆', '坊', '社', '部', '中心',
-    '工作室', '经营部', '服务部', '商行', '商店', '商场', '超市',
-    '酒店', '饭店', '餐厅', '宾馆', '旅馆'
+  '店', '铺', '行', '馆', '坊', '社', '部', '中心',
+  '工作室', '经营部', '服务部', '商行', '商店', '商场', '超市',
+  '酒店', '饭店', '餐厅', '宾馆', '旅馆'
 ];
 
 const ALL_SUFFIXES = [...COMPANY_SUFFIXES, ...SHOP_SUFFIXES];
 
 const COMPANY_REGEX = new RegExp(
-    `[\\u4e00-\\u9fa5]{2,20}(?:${COMPANY_SUFFIXES.join('|')})`,
-    'gu'
+  `[\\u4e00-\\u9fa5]{2,20}(?:${COMPANY_SUFFIXES.join('|')})`,
+  'gu'
 );
 
 const SHOP_REGEX = new RegExp(
-    `[\\u4e00-\\u9fa5]{2,20}(?:${SHOP_SUFFIXES.join('|')})`,
-    'gu'
+  `[\\u4e00-\\u9fa5]{2,20}(?:${SHOP_SUFFIXES.join('|')})`,
+  'gu'
 );
 
 function extractCompanyNameFromText(text) {
-    const companyMatch = text.match(COMPANY_REGEX);
-    if (companyMatch) {
-        return companyMatch[0].trim();
-    }
-    
-    const shopMatch = text.match(SHOP_REGEX);
-    if (shopMatch) {
-        return shopMatch[0].trim();
-    }
-    
-    return null;
+  const companyMatch = text.match(COMPANY_REGEX);
+  if (companyMatch) {
+    return companyMatch[0].trim();
+  }
+
+  const shopMatch = text.match(SHOP_REGEX);
+  if (shopMatch) {
+    return shopMatch[0].trim();
+  }
+
+  return null;
 }
 
 function extractBizName(text, html = '') {
-    const names = [];
-    
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch && titleMatch[1]) {
-        const candidate = extractCompanyNameFromText(titleMatch[1]);
-        if (candidate) {
-            names.push(candidate);
-        }
+  const names = [];
+
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch && titleMatch[1]) {
+    const candidate = extractCompanyNameFromText(titleMatch[1]);
+    if (candidate) {
+      names.push(candidate);
     }
-    
-    const companyMatches = text.match(COMPANY_REGEX);
-    if (companyMatches) {
-        names.push(...companyMatches);
+  }
+
+  const companyMatches = text.match(COMPANY_REGEX);
+  if (companyMatches) {
+    names.push(...companyMatches);
+  }
+
+  const shopMatches = text.match(SHOP_REGEX);
+  if (shopMatches) {
+    names.push(...shopMatches);
+  }
+
+  const uniqueNames = [...new Set(names)];
+  const filteredNames = uniqueNames.filter(n => {
+    return n.length >= 2 && !/^\d+[\d\s]*$/.test(n);
+  });
+
+  for (const name of filteredNames) {
+    if (/(公司|有限|集团|股份)/u.test(name)) {
+      return name;
     }
-    
-    const shopMatches = text.match(SHOP_REGEX);
-    if (shopMatches) {
-        names.push(...shopMatches);
-    }
-    
-    const uniqueNames = [...new Set(names)];
-    const filteredNames = uniqueNames.filter(n => {
-        return n.length >= 2 && !/^\d+[\d\s]*$/.test(n);
-    });
-    
-    for (const name of filteredNames) {
-        if (/(公司|有限|集团|股份)/u.test(name)) {
-            return name;
-        }
-    }
-    
-    return filteredNames[0] || '';
+  }
+
+  return filteredNames[0] || '';
 }
 
 function extractBizInfo(text) {
-    const info = {};
-    
-    const creditCodeMatch = text.match(/(?:统一社会信用代码|统一信用代码|信用代码|统一代码|社会信用代码)(?:：|:)\s*([0-9A-Z]{18})/u);
-    if (creditCodeMatch) {
-        info.credit_code = creditCodeMatch[1];
-    }
-    
-    const licenseMatch = text.match(/(?:营业执照注册号|营业执照|注册号)(?:：|:)\s*(\d{15})/u);
-    if (licenseMatch) {
-        info.license_no = licenseMatch[1];
-    }
-    
-    const legalPersonMatch = text.match(/(?:法定代表人|法人代表|负责人)(?:：|:)\s*([^\n\r]{2,10})/u);
-    if (legalPersonMatch) {
-        info.legal_person = legalPersonMatch[1].trim();
-    }
-    
-    const capitalMatch = text.match(/(?:注册资本)(?:：|:)\s*([^\n\r]{2,30})/u);
-    if (capitalMatch) {
-        info.registered_capital = capitalMatch[1].trim();
-    }
-    
-    const addressMatch = text.match(/(?:住所|经营场所|注册地址|地址)(?:：|:)\s*([^\n\r]{5,80})/u);
-    if (addressMatch) {
-        info.address = addressMatch[1].trim();
-    }
-    
-    const scopeMatch = text.match(/(?:经营范围)(?:：|:)\s*([^\n\r]{10,200})/u);
-    if (scopeMatch) {
-        info.business_scope = scopeMatch[1].trim();
-    }
-    
-    return info;
+  const info = {};
+
+  const creditCodeMatch = text.match(/(?:统一社会信用代码|统一信用代码|信用代码|统一代码|社会信用代码)(?:：|:)\s*([0-9A-Z]{18})/u);
+  if (creditCodeMatch) {
+    info.credit_code = creditCodeMatch[1];
+  }
+
+  const licenseMatch = text.match(/(?:营业执照注册号|营业执照|注册号)(?:：|:)\s*(\d{15})/u);
+  if (licenseMatch) {
+    info.license_no = licenseMatch[1];
+  }
+
+  const legalPersonMatch = text.match(/(?:法定代表人|法人代表|负责人)(?:：|:)\s*([^\n\r]{2,10})/u);
+  if (legalPersonMatch) {
+    info.legal_person = legalPersonMatch[1].trim();
+  }
+
+  const capitalMatch = text.match(/(?:注册资本)(?:：|:)\s*([^\n\r]{2,30})/u);
+  if (capitalMatch) {
+    info.registered_capital = capitalMatch[1].trim();
+  }
+
+  const addressMatch = text.match(/(?:住所|经营场所|注册地址|地址)(?:：|:)\s*([^\n\r]{5,80})/u);
+  if (addressMatch) {
+    info.address = addressMatch[1].trim();
+  }
+
+  const scopeMatch = text.match(/(?:经营范围)(?:：|:)\s*([^\n\r]{10,200})/u);
+  if (scopeMatch) {
+    info.business_scope = scopeMatch[1].trim();
+  }
+
+  return info;
 }
 
 function extractKeywords(text, businessName = '') {
-    const keywords = [];
-    
-    if (businessName) {
-        keywords.push(businessName);
-        let coreName = businessName;
-        for (const suffix of ALL_SUFFIXES) {
-            coreName = coreName.replace(new RegExp(suffix, 'u'), '');
-        }
-        coreName = coreName.trim();
-        if (coreName.length >= 2 && coreName !== businessName) {
-            keywords.push(coreName);
-        }
+  const keywords = [];
+
+  if (businessName) {
+    keywords.push(businessName);
+    let coreName = businessName;
+    for (const suffix of ALL_SUFFIXES) {
+      coreName = coreName.replace(new RegExp(suffix, 'u'), '');
     }
-    
-    const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
-    if (titleMatch && titleMatch[1]) {
-        const title = stripHtmlTags(titleMatch[1]).trim();
-        const titleParts = title.split(/[_\-\|｜\s]+/u);
-        for (const part of titleParts) {
-            const trimmed = part.trim();
-            if (trimmed.length >= 3 && trimmed.length <= 20 && !/^\d+$/.test(trimmed)) {
-                keywords.push(trimmed);
-            }
-        }
+    coreName = coreName.trim();
+    if (coreName.length >= 2 && coreName !== businessName) {
+      keywords.push(coreName);
     }
-    
-    const uniqueKeywords = [...new Set(keywords)];
-    const filteredKeywords = uniqueKeywords.filter(kw => {
-        const trimmed = kw.trim();
-        return trimmed.length >= 2
-            && !/^\d+$/.test(trimmed)
-            && !['首页', '下一页', '上一页', '返回', '搜索', '登录', '注册'].includes(trimmed);
-    });
-    
-    filteredKeywords.sort((a, b) => b.length - a.length);
-    
-    return filteredKeywords.slice(0, 10);
+  }
+
+  const titleMatch = text.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (titleMatch && titleMatch[1]) {
+    const title = stripHtmlTags(titleMatch[1]).trim();
+    const titleParts = title.split(/[_\-\|｜\s]+/u);
+    for (const part of titleParts) {
+      const trimmed = part.trim();
+      if (trimmed.length >= 3 && trimmed.length <= 20 && !/^\d+$/.test(trimmed)) {
+        keywords.push(trimmed);
+      }
+    }
+  }
+
+  const uniqueKeywords = [...new Set(keywords)];
+  const filteredKeywords = uniqueKeywords.filter(kw => {
+    const trimmed = kw.trim();
+    return trimmed.length >= 2
+      && !/^\d+$/.test(trimmed)
+      && !['首页', '下一页', '上一页', '返回', '搜索', '登录', '注册'].includes(trimmed);
+  });
+
+  filteredKeywords.sort((a, b) => b.length - a.length);
+
+  return filteredKeywords.slice(0, 10);
 }
 
 async function runGoofishCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
-  
+
   const browserArgs = [
     '--start-maximized',
     '--disable-blink-features=AutomationControlled',
@@ -271,12 +271,12 @@ async function runGoofishCrawler() {
     '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
   ];
 
-  const browser = await chromium.launch({ 
+  const browser = await chromium.launch({
     headless: headlessMode,
     args: browserArgs,
     ignoreDefaultArgs: ['--enable-automation']
   });
-  
+
   const storageStatePath = path.join(__dirname, '../storage/goofish_storageState.json');
   const context = await browser.newContext({
     viewport: { width: 1920, height: 1080 },
@@ -285,7 +285,7 @@ async function runGoofishCrawler() {
     storageState: fs.existsSync(storageStatePath) ? storageStatePath : undefined,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
   });
-  
+
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', {
       get: () => undefined,
@@ -517,30 +517,30 @@ async function runGoofishCrawler() {
   const extractDetailPageWithBrowser = async (detailUrl) => {
     try {
       console.log(`  -> 正在访问详情页: ${detailUrl.substring(0, 50)}...`);
-      
+
       const newPage = await context.newPage();
       await newPage.setViewportSize({ width: 1920, height: 1080 });
-      
+
       try {
         await newPage.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
         await newPage.waitForTimeout(3000);
-        
+
         await closePopupsOnPage(newPage);
-        
+
         await newPage.evaluate(() => {
           window.scrollBy(0, 500);
         });
         await newPage.waitForTimeout(1000);
-        
+
         const pageContent = await newPage.content();
         const pageText = await newPage.textContent('body');
         const strippedText = stripHtmlTags(pageContent);
-        
+
         const phones = extractPhones(strippedText + pageContent);
         const businessName = extractBizName(strippedText, pageContent);
         const businessInfo = extractBizInfo(strippedText);
         const keywords = extractKeywords(strippedText, businessName);
-        
+
         console.log(`  -> 找到 ${phones.length} 个手机号`);
         if (phones.length > 0) {
           console.log(`  -> ${phones.join(', ')}`);
@@ -548,7 +548,7 @@ async function runGoofishCrawler() {
         if (businessName) {
           console.log(`  -> 商户名称: ${businessName}`);
         }
-        
+
         return {
           success: true,
           phones: phones,
@@ -982,7 +982,6 @@ async function runGoofishCrawler() {
               const phoneRecords = phones.map(phone => ({
                 mall_data_id: mallDataId,
                 phone: phone,
-                phone_type: phone.startsWith('1') ? 'mobile' : 'landline',
                 confidence_level: 'medium',
                 confidence_score: 50,
                 source_count: 1,

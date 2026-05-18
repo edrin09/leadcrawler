@@ -1,4 +1,16 @@
-const EXTRACTOR_VERSION = '1.0.0';
+const EXTRACTOR_VERSION = '2.0.0';
+
+const AI_CONFIG = {
+    enabled: process.env.AI_ENABLED === 'true' || false,
+    provider: process.env.AI_PROVIDER || 'deepseek',
+    apiKey: process.env.AI_API_KEY || '',
+    endpoint: process.env.AI_ENDPOINT || 'https://api.deepseek.com/chat/completions',
+    model: process.env.AI_MODEL || 'deepseek-chat',
+    timeout: parseInt(process.env.AI_TIMEOUT) || 15000,
+    maxRetries: parseInt(process.env.AI_MAX_RETRIES) || 2,
+    batchSize: parseInt(process.env.AI_BATCH_SIZE) || 10,
+    cacheEnabled: process.env.AI_CACHE_ENABLED !== 'false',
+};
 
 const PHONE_PATTERNS = {
     exact: [
@@ -97,6 +109,36 @@ const ANTI_BOT_SIGNATURES = {
 
 const CONTACT_HINTS = ['电话', '手机', '联系', 'tel', 'phone', 'mobile', '客服', '热线'];
 
+const PHONE_CONTEXT_POSITIVE = [
+    '联系', '电话', '手机', '热线', '客服', '咨询', '拨打', '来电',
+    '联系方式', '联系电话', '联系手机', '商家电话', '店铺电话',
+    '掌柜电话', '店主电话', '老板电话', '负责人电话', '联系人',
+    '招商', '加盟', '预约', '预订', '下单'
+];
+
+const PHONE_CONTEXT_NEGATIVE = [
+    '邮编', '邮政编码', '面积', '平方米', '平米', '价格', '元',
+    '平方米', '㎡', '岁', '年龄', '年份', '年度', '账号', '密码',
+    'ID', '编号', '序号', '第', '篇', '页', '条', '个', '次'
+];
+
+const SEMANTIC_BUSINESS_KEYWORDS = [
+    '餐饮', '美食', '酒店', '宾馆', '民宿', '公寓', '写字楼', '商铺',
+    '房产', '中介', '装修', '建材', '家居', '家电', '家具', '超市',
+    '便利店', '药店', '医院', '门诊', '学校', '培训', '教育',
+    '美容', '美发', 'SPA', '健身', '运动', '瑜伽', '游泳', '网球',
+    '足球', '篮球', '羽毛球', '乒乓球', '台球', '高尔夫', '滑雪',
+    '游泳馆', '健身房', '瑜伽馆', '舞蹈', '音乐', '美术', '钢琴',
+    '吉他', '古筝', '架子鼓', '跆拳道', '武术', '拳击', '泰拳',
+    '摄影', '摄像', '婚庆', '主持', 'DJ', 'MC', '演员', '歌手',
+    '模特', '经纪人', '导演', '编剧', '制片', '剪辑', '特效',
+    '设计', '广告', '传媒', '公关', '策划', '咨询', '法律', '会计',
+    '审计', '税务', '评估', '担保', '典当', '拍卖', '回收', '维修',
+    '清洗', '保洁', '搬家', '物流', '快递', '仓储', '运输', '货运'
+];
+
+const aiCache = new Map();
+
 function detectEncoding(content) {
     const gbkSignatures = ['charset=gbk', 'charset=gb2312', 'charset=gb18030', 'gb2312', 'gbk'];
     const lowerContent = content.toLowerCase();
@@ -121,16 +163,16 @@ function convertEncoding(content, fromEncoding) {
 
 function stripHtmlTags(html) {
     return html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
-               .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
-               .replace(/<[^>]+>/g, ' ')
-               .replace(/&nbsp;/g, ' ')
-               .replace(/&amp;/g, '&')
-               .replace(/&lt;/g, '<')
-               .replace(/&gt;/g, '>')
-               .replace(/&quot;/g, '"')
-               .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
-               .replace(/\s+/g, ' ')
-               .trim();
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(num))
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function detectAntiBot(html) {
@@ -185,20 +227,295 @@ function cleanPhone(phone) {
     return null;
 }
 
-function extractPhones(text, matchType = 'all') {
+function getCacheKey(type, data) {
+    return `${type}:${JSON.stringify(data)}`;
+}
+
+async function callAIEndpoint(messages, retryCount = 0) {
+    if (!AI_CONFIG.enabled || !AI_CONFIG.apiKey) {
+        return null;
+    }
+
+    const cacheKey = getCacheKey('ai', messages);
+    if (AI_CONFIG.cacheEnabled && aiCache.has(cacheKey)) {
+        return aiCache.get(cacheKey);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), AI_CONFIG.timeout);
+
+    try {
+        const response = await fetch(AI_CONFIG.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
+            },
+            body: JSON.stringify({
+                model: AI_CONFIG.model,
+                messages: messages,
+                temperature: 0.3,
+                max_tokens: 500,
+            }),
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            throw new Error(`AI API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (content && AI_CONFIG.cacheEnabled) {
+            aiCache.set(cacheKey, content);
+            if (aiCache.size > 1000) {
+                const firstKey = aiCache.keys().next().value;
+                aiCache.delete(firstKey);
+            }
+        }
+
+        return content;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        console.warn(`AI API call failed (attempt ${retryCount + 1}):`, error.message);
+
+        if (retryCount < AI_CONFIG.maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+            return callAIEndpoint(messages, retryCount + 1);
+        }
+
+        return null;
+    }
+}
+
+async function validatePhoneWithAI(phone, context = '') {
+    if (!AI_CONFIG.enabled) {
+        return { valid: true, confidence: 0.5, reason: 'AI validation disabled' };
+    }
+
+    const messages = [
+        {
+            role: 'system',
+            content: `你是一个专业的中国电话号码验证助手。请判断给定的电话号码是否是一个真实有效的商业联系号码。
+判断标准：
+1. 号码格式正确（中国手机号：1[3-9]开头的11位数字，或固话：区号+号码）
+2. 号码出现在商业/联系上下文中（不是价格、面积、年龄等无关内容）
+3. 号码是真实的商业联系电话，不是测试号、假号或随机数字
+
+请只返回一个JSON对象：{"valid": true/false, "confidence": 0.0-1.0, "reason": "简短原因"}`
+        },
+        {
+            role: 'user',
+            content: `电话号码：${phone}\n上下文：${context || '无'}`
+        }
+    ];
+
+    const result = await callAIEndpoint(messages);
+    if (!result) {
+        return { valid: true, confidence: 0.5, reason: 'AI validation failed, assuming valid' };
+    }
+
+    try {
+        const cleanedResult = result.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+        return JSON.parse(cleanedResult);
+    } catch (e) {
+        console.warn('Failed to parse AI response:', result);
+        return { valid: true, confidence: 0.5, reason: 'Parse error, assuming valid' };
+    }
+}
+
+async function extractKeywordsWithAI(text, businessName = '') {
+    if (!AI_CONFIG.enabled || text.length < 50) {
+        return [];
+    }
+
+    const sampleText = text.slice(0, 2000);
+    const messages = [
+        {
+            role: 'system',
+            content: `你是一个商业信息提取专家。请从文本中提取与商业相关的关键词，用于搜索商家信息。
+
+要求：
+1. 提取商家名称、行业关键词、地址关键词
+2. 每个关键词2-10个中文字符
+3. 排除数字、符号、通用词汇（如"首页"、"登录"等）
+4. 最多返回10个最有价值的关键词
+5. 考虑上下文语义，选择与商业经营相关的词汇
+
+请返回JSON数组格式：["关键词1", "关键词2", ...]`
+        },
+        {
+            role: 'user',
+            content: `商家名称：${businessName || '未知'}\n文本内容：${sampleText}`
+        }
+    ];
+
+    const result = await callAIEndpoint(messages);
+    if (!result) {
+        return [];
+    }
+
+    try {
+        const cleanedResult = result.replace(/^\[/, '[').replace(/\]$/, ']');
+        const keywords = JSON.parse(cleanedResult);
+        if (Array.isArray(keywords)) {
+            return keywords.filter(k => typeof k === 'string' && k.length >= 2 && k.length <= 10);
+        }
+        return [];
+    } catch (e) {
+        console.warn('Failed to parse AI keywords response:', result);
+        return [];
+    }
+}
+
+function analyzePhoneContext(text, phone) {
+    const contextRadius = 100;
+    const phoneIndex = text.indexOf(phone);
+    let context = '';
+
+    if (phoneIndex !== -1) {
+        const start = Math.max(0, phoneIndex - contextRadius);
+        const end = Math.min(text.length, phoneIndex + phone.length + contextRadius);
+        context = text.slice(start, end);
+    }
+
+    let positiveScore = 0;
+    let negativeScore = 0;
+
+    for (const keyword of PHONE_CONTEXT_POSITIVE) {
+        if (context.includes(keyword)) {
+            positiveScore += 1;
+        }
+    }
+
+    for (const keyword of PHONE_CONTEXT_NEGATIVE) {
+        if (context.includes(keyword)) {
+            negativeScore += 1;
+        }
+    }
+
+    const proximityBonus = [];
+    for (const keyword of PHONE_CONTEXT_POSITIVE) {
+        const idx = context.indexOf(keyword);
+        if (idx !== -1) {
+            const distance = Math.abs(idx - phoneIndex);
+            if (distance < 50) {
+                proximityBonus.push({ keyword, distance });
+            }
+        }
+    }
+
+    return {
+        context,
+        positiveScore,
+        negativeScore,
+        proximityBonus,
+        isPositiveContext: positiveScore > negativeScore,
+        hasStrongContactSignal: positiveScore >= 2 || proximityBonus.length > 0
+    };
+}
+
+function filterPhonesByContext(phones, text, businessName = '') {
+    const filtered = [];
+
+    for (const phone of phones) {
+        const analysis = analyzePhoneContext(text, phone);
+
+        const contextScore = analysis.positiveScore * 10 - analysis.negativeScore * 5;
+
+        let businessRelevance = 0;
+        if (businessName) {
+            const textLower = text.toLowerCase();
+            const nameLower = businessName.toLowerCase();
+            if (textLower.includes(nameLower)) {
+                businessRelevance += 15;
+            }
+        }
+
+        for (const kw of SEMANTIC_BUSINESS_KEYWORDS) {
+            if (text.includes(kw)) {
+                businessRelevance += 3;
+                break;
+            }
+        }
+
+        const totalScore = contextScore + businessRelevance;
+
+        if (totalScore >= 5 || analysis.hasStrongContactSignal) {
+            filtered.push({
+                phone,
+                contextAnalysis: analysis,
+                filterScore: totalScore,
+                passed: true
+            });
+        } else if (analysis.positiveScore > 0 || analysis.negativeScore < 2) {
+            filtered.push({
+                phone,
+                contextAnalysis: analysis,
+                filterScore: totalScore,
+                passed: totalScore >= 0
+            });
+        } else {
+            filtered.push({
+                phone,
+                contextAnalysis: analysis,
+                filterScore: totalScore,
+                passed: false
+            });
+        }
+    }
+
+    return filtered;
+}
+
+function enhancedCleanPhone(phone) {
+    const basicCleaned = cleanPhone(phone);
+    if (!basicCleaned) {
+        return null;
+    }
+
+    if (basicCleaned.length === 11 && basicCleaned.startsWith('1')) {
+        const prefix = basicCleaned.slice(0, 3);
+        const invalidPrefixes = ['100', '101', '102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '120', '121', '122', '123', '125', '127', '129'];
+        if (invalidPrefixes.includes(prefix)) {
+            return null;
+        }
+
+        const carrierPrefixes = {
+            '133': '中国电信', '153': '中国电信', '177': '中国电信', '180': '中国电信', '181': '中国电信', '189': '中国电信', '199': '中国电信',
+            '130': '中国联通', '131': '中国联通', '132': '中国联通', '155': '中国联通', '156': '中国联通', '166': '中国联通', '175': '中国联通', '176': '中国联通', '185': '中国联通', '186': '中国联通',
+            '134': '中国移动', '135': '中国移动', '136': '中国移动', '137': '中国移动', '138': '中国移动', '139': '中国移动', '147': '中国移动', '150': '中国移动', '151': '中国移动', '152': '中国移动', '157': '中国移动', '158': '中国移动', '159': '中国移动', '178': '中国移动', '182': '中国移动', '183': '中国移动', '184': '中国移动', '187': '中国移动', '188': '中国移动', '197': '中国移动', '198': '中国移动'
+        };
+
+        if (!carrierPrefixes[prefix]) {
+            return null;
+        }
+    }
+
+    return basicCleaned;
+}
+
+function extractPhones(text, matchType = 'all', useEnhanced = true, excludeLandline = true) {
     const phones = [];
     const seenPhones = new Set();
     const patternGroups = matchType === 'all' ? ['exact', 'special'] : ['exact'];
 
     const separatedMobilePattern = /1[3-9]\d[-.\s]?\d{4}[-.\s]?\d{4}/g;
+    const cleaner = useEnhanced ? enhancedCleanPhone : cleanPhone;
 
     for (const group of patternGroups) {
         for (const pattern of PHONE_PATTERNS[group]) {
             const matches = text.match(pattern);
             if (matches) {
                 for (const match of matches) {
-                    const phone = cleanPhone(match);
+                    const phone = cleaner(match);
                     if (phone && !seenPhones.has(phone)) {
+                        if (excludeLandline && isLandline(phone)) {
+                            continue;
+                        }
                         phones.push(phone);
                         seenPhones.add(phone);
                     }
@@ -210,8 +527,11 @@ function extractPhones(text, matchType = 'all') {
     const separatedMatches = text.match(separatedMobilePattern);
     if (separatedMatches) {
         for (const match of separatedMatches) {
-            const phone = cleanPhone(match);
+            const phone = cleaner(match);
             if (phone && !seenPhones.has(phone)) {
+                if (excludeLandline && isLandline(phone)) {
+                    continue;
+                }
                 phones.push(phone);
                 seenPhones.add(phone);
             }
@@ -222,7 +542,7 @@ function extractPhones(text, matchType = 'all') {
 }
 
 function extractPhonesPublic(text) {
-    return extractPhones(text);
+    return extractPhones(text, 'all', false, true);
 }
 
 function extractFromAttributes(html) {
@@ -494,12 +814,20 @@ async function extractDetailPageInfo(url, timeout = 10000) {
     const businessInfo = extractBusinessInfo(text);
     const keywords = extractSearchKeywords(text, businessName);
 
+    const phoneFilterResults = filterPhonesByContext(allPhones, text, businessName);
+    const filteredPhones = phoneFilterResults
+        .filter(r => r.passed)
+        .map(r => r.phone);
+
+    const aiKeywords = await extractKeywordsWithAI(text, businessName);
+    const combinedKeywords = [...new Set([...keywords, ...aiKeywords])];
+
     return {
         url,
-        phones: allPhones,
+        phones: filteredPhones,
         business_name: businessName,
         business_info: businessInfo,
-        keywords,
+        keywords: combinedKeywords.slice(0, 10),
         status: 'success',
         status_msg: '页面解析成功',
         content_length: processedContent.length,
@@ -507,6 +835,7 @@ async function extractDetailPageInfo(url, timeout = 10000) {
         text_phones: phones,
         attr_phones: attrPhones,
         script_phones: scriptPhones,
+        phone_filter_results: phoneFilterResults,
     };
 }
 
@@ -554,7 +883,7 @@ function trackPhoneSources(map, phones, source, context = '') {
     }
 }
 
-function scorePhoneCredibility(phone, sources, businessNames = [], businessInfo = {}) {
+function scorePhoneCredibility(phone, sources, businessNames = [], businessInfo = {}, filterAnalysis = null) {
     let score = 0;
 
     let hasDetailPage = false;
@@ -614,6 +943,22 @@ function scorePhoneCredibility(phone, sources, businessNames = [], businessInfo 
     }
     score += Math.min(contextScore, 25);
 
+    if (filterAnalysis) {
+        if (filterAnalysis.hasStrongContactSignal) {
+            score += 20;
+        }
+        if (filterAnalysis.positiveScore > 0) {
+            score += filterAnalysis.positiveScore * 5;
+        }
+        if (filterAnalysis.proximityBonus && filterAnalysis.proximityBonus.length > 0) {
+            score += Math.min(filterAnalysis.proximityBonus.length * 8, 24);
+        }
+        if (!filterAnalysis.isPositiveContext && filterAnalysis.negativeScore > 2) {
+            score -= filterAnalysis.negativeScore * 5;
+        }
+        score += Math.max(filterAnalysis.filterScore, 0);
+    }
+
     if (phone.length === 11 && phone.startsWith('1')) {
         const second = phone[1];
         if (['3', '4', '5', '6', '7', '8', '9'].includes(second)) {
@@ -638,7 +983,27 @@ function scorePhoneCredibility(phone, sources, businessNames = [], businessInfo 
         score += 4;
     }
 
-    return Math.min(score, 100);
+    return Math.max(0, Math.min(score, 100));
+}
+
+async function enhancedScorePhoneCredibility(phone, sources, businessNames = [], businessInfo = {}, text = '') {
+    let score = scorePhoneCredibility(phone, sources, businessNames, businessInfo);
+
+    if (AI_CONFIG.enabled && text) {
+        const contextAnalysis = analyzePhoneContext(text, phone);
+        score = scorePhoneCredibility(phone, sources, businessNames, businessInfo, contextAnalysis);
+
+        const aiValidation = await validatePhoneWithAI(phone, text);
+        if (!aiValidation.valid) {
+            score = Math.floor(score * 0.3);
+        } else if (aiValidation.confidence > 0.8) {
+            score = Math.floor(score * 1.2);
+        } else if (aiValidation.confidence < 0.5) {
+            score = Math.floor(score * 0.7);
+        }
+    }
+
+    return Math.max(0, Math.min(score, 100));
 }
 
 function classifyConfidence(score) {
@@ -661,6 +1026,23 @@ function classifyPhoneType(phone) {
         return 'hotline';
     }
     return 'other';
+}
+
+function isLandline(phone) {
+    if (/^0\d{2,3}\d{7,8}$/.test(phone)) {
+        return true;
+    }
+    if (/^0\d{2,3}[-.]?\d{7,8}$/.test(phone)) {
+        return true;
+    }
+    return false;
+}
+
+function isMobile(phone) {
+    if (phone.length === 11 && phone.startsWith('1') && /^[3-9]/.test(phone.slice(1, 2))) {
+        return true;
+    }
+    return false;
 }
 
 async function searchPlatform(platform, keywords) {
@@ -808,7 +1190,18 @@ async function unifiedExtract(options = {}) {
 
     const scoredPhones = [];
     for (const [phone, sources] of Object.entries(phoneSourceMap)) {
-        const score = scorePhoneCredibility(phone, sources, uniqueBusinessNames, allBusinessInfo);
+        let filterAnalysis = null;
+        for (const dr of allDetailResults) {
+            if (dr.phone_filter_results) {
+                const phoneFilterResult = dr.phone_filter_results.find(r => r.phone === phone);
+                if (phoneFilterResult) {
+                    filterAnalysis = phoneFilterResult.contextAnalysis;
+                    break;
+                }
+            }
+        }
+
+        const score = scorePhoneCredibility(phone, sources, uniqueBusinessNames, allBusinessInfo, filterAnalysis);
         const uniqueSources = [...new Set(sources.map(s => s.source))];
         scoredPhones.push({
             phone,
@@ -818,6 +1211,7 @@ async function unifiedExtract(options = {}) {
             source_count: sources.length,
             source_detail: sources,
             type: classifyPhoneType(phone),
+            filter_analysis: filterAnalysis,
         });
     }
 
@@ -826,6 +1220,9 @@ async function unifiedExtract(options = {}) {
     const highCount = scoredPhones.filter(p => p.level === 'high').length;
     const mediumCount = scoredPhones.filter(p => p.level === 'medium').length;
     const lowCount = scoredPhones.filter(p => p.level === 'low').length;
+
+    const filteredCount = scoredPhones.filter(p => p.score >= 40).length;
+    const originalCount = Object.keys(phoneSourceMap).length;
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
@@ -842,6 +1239,8 @@ async function unifiedExtract(options = {}) {
             high_confidence: highCount,
             medium_confidence: mediumCount,
             low_confidence: lowCount,
+            quality_filtered_count: originalCount - filteredCount,
+            quality_filter_rate: originalCount > 0 ? ((originalCount - filteredCount) / originalCount * 100).toFixed(1) + '%' : '0%',
             detail_pages_processed: allDetailResults.length,
             cross_platform_searches: allCrossResults.length,
             elapsed: parseFloat(elapsed),
@@ -855,11 +1254,15 @@ function formatHeaders() {
 
 module.exports = {
     EXTRACTOR_VERSION,
+    AI_CONFIG,
     PHONE_PATTERNS,
     HEADERS,
     PLATFORMS,
     detectAntiBot,
     cleanPhone,
+    enhancedCleanPhone,
+    isLandline,
+    isMobile,
     extractPhones,
     extractPhonesPublic,
     extractFromAttributes,
@@ -872,9 +1275,15 @@ module.exports = {
     fetchPage,
     trackPhoneSources,
     scorePhoneCredibility,
+    enhancedScorePhoneCredibility,
     classifyConfidence,
     classifyPhoneType,
     crossPlatformSearch,
     unifiedExtract,
     formatHeaders,
+    analyzePhoneContext,
+    filterPhonesByContext,
+    validatePhoneWithAI,
+    extractKeywordsWithAI,
+    callAIEndpoint,
 };

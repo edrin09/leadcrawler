@@ -6,8 +6,8 @@
   "scripts": {},
   "dependencies": {
     "dotenv": "^16.4.5",
-    "playwright": "^1.45.0",
-    "mysql2": "^3.10.0"
-  },
-  "devDependencies": {}
+    "mysql2": "^3.10.0",
+    "nodemailer": "^8.0.7",
+    "playwright": "^1.45.0"
+  }
 }

@@ -1,4 +1,4 @@
-FROM php:8.2-cli
+FROM php:8.3-cli
 
 # ==================== 系统依赖 ====================
 # 更换 Debian 软件源并安装必要工具
@@ -20,7 +20,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 
 # ==================== PHP 扩展 ====================
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-RUN docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring xml bcmath sockets
+RUN docker-php-ext-install pdo pdo_mysql pdo_sqlite zip gd mbstring xml bcmath sockets pcntl
 
 # ==================== 工作目录 ====================
 WORKDIR /app
@@ -28,9 +28,13 @@ WORKDIR /app
 # 设置 npm 镜像
 RUN npm config set registry https://registry.npmmirror.com
 
+# ==================== Playwright 浏览器 ====================
+# 全局安装 Playwright 和浏览器（挂载的代码会使用这些）
+RUN npm install -g playwright && npx playwright install chromium --with-deps
+
 # 注意：代码通过目录映射挂载，不打包进镜像
 
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 8787 8282 3000
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
