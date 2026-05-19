@@ -41,6 +41,7 @@ trait MaillCurd
             $count = $this->model
                 ->withJoin($this->with_join, $this->join_type)
                 ->where($where)
+                ->where('status', 1)
 //                ->fetchSql()
                 ->count();
 

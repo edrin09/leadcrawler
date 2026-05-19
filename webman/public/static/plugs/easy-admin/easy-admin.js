@@ -1010,6 +1010,93 @@ define(["jquery", "tableSelect"], function ($, tableSelect) {
                 });
             }
         },
+
+// 在 admin 对象中添加 checkPermission 函数（放在合适的位置，比如 checkAuth 函数附近）
+        checkPermission: function (permissionType, elem) {
+            // 1. 确保 permissionType 是字符串
+            if (typeof permissionType !== 'string') {
+                console.warn('checkPermission: permissionType must be a string, got:', typeof permissionType, permissionType);
+                return false;
+            }
+
+            // 2. 如果是超级管理员，直接返回true
+            if (typeof CONFIG !== 'undefined' && CONFIG.IS_SUPER_ADMIN) {
+                return true;
+            }
+
+            // 3. 检查后端传递的全局权限变量 (支持多种格式)
+            var authVarNames = [
+                'auth_' + permissionType,                // auth_add (您后端使用的格式)
+                permissionType.toUpperCase() + '_AUTH',  // ADD_AUTH
+                'AUTH_' + permissionType.toUpperCase()   // AUTH_ADD
+            ];
+
+            for (var i = 0; i < authVarNames.length; i++) {
+                var varName = authVarNames[i];
+                if (typeof window[varName] !== 'undefined') {
+                    var authValue = window[varName];
+                    if (authValue === true || authValue === 1 || authValue === '1') {
+                        return true;
+                    }
+                }
+            }
+
+            // 4. 检查全局 CURRENT_AUTH 对象
+            if (typeof window.CURRENT_AUTH !== 'undefined' && window.CURRENT_AUTH[permissionType] === 1) {
+                return true;
+            }
+
+            // 5. 检查元素属性
+            if (elem) {
+                var elemAuth = $(elem).attr('data-auth-' + permissionType);
+                if (elemAuth === '1') {
+                    return true;
+                }
+            }
+
+            // 6. 回退到原始的 checkAuth（保持向后兼容）
+            return admin.checkAuth(permissionType, elem);
+        },
+        getQueryVariable(variable, defaultValue) {
+            if (typeof defaultValue == 'undefined') {
+                defaultValue = undefined;
+            }
+
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) {
+                    return decodeURIComponent(pair[1]);
+                }
+            }
+            return defaultValue;
+        },
+
+        // 获取所有URL参数
+        getUrlParams: function (excludeParams) {
+            excludeParams = excludeParams || ['page', 'limit', 'sort', 'order'];
+            var params = {};
+            var queryString = window.location.search.substring(1);
+
+            if (!queryString) return params;
+
+            var pairs = queryString.split('&');
+            for (var i = 0; i < pairs.length; i++) {
+                var pair = pairs[i].split('=');
+                if (pair.length === 2) {
+                    var key = decodeURIComponent(pair[0]);
+                    var value = decodeURIComponent(pair[1]);
+
+                    // 检查是否在排除列表中
+                    if (excludeParams.indexOf(key) === -1) {
+                        params[key] = value;
+                    }
+                }
+            }
+            return params;
+        },
+
         checkMobile: function () {
             var userAgentInfo = navigator.userAgent;
             var mobileAgents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod"];

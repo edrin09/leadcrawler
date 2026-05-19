@@ -7,7 +7,7 @@ define(["jquery", "easy-admin"], function ($, ea) {
         index_url: auth_header + '/index',
         add_url: auth_header + '/add',
         edit_url: auth_header + '/edit',
-        delete_url: auth_header + '/delete',
+        delete_url: auth_header + '/invalid',
         export_url: auth_header + '/export',
         modify_url: auth_header + '/modify',
     };
@@ -47,12 +47,6 @@ define(["jquery", "easy-admin"], function ($, ea) {
                         search: 'range'
                     },
                     {
-                        field: 'phone_count',
-                        width: 80,
-                        title: '手机号数量',
-                        align: 'left'
-                    },
-                    {
                         field: 'title',
                         minWidth: 600,
                         title: '标题',
@@ -76,19 +70,50 @@ define(["jquery", "easy-admin"], function ($, ea) {
                     //     }
                     // },
                     {
-                        width: 100,
+                        field: 'phone_count',
+                        width: 120,
+                        title: '手机号数量',
+                        align: 'left'
+                    },
+                    {
+                        width: 200,
                         title: '操作',
-                        templet: ea.table.tool,
+                        align: 'left',
                         fixed: 'right',
-                        operat: [
-                            [{
-                                text: '编辑',
-                                url: init.edit_url,
-                                method: 'open',
-                                auth: 'edit',
-                                class: 'layui-btn layui-btn-xs layui-btn-success',
-                            }],
-                            'delete']
+                        templet: function (d) {
+                            // 获取主键值
+                            var pkValue = d[pk];
+                            var html = '';
+
+                            if (ea.checkPermission('edit', init.table_elem)) {
+
+                                // 按钮始终显示 - 使用 href="javascript:;" 防止页面刷新
+                                html += '<a href="javascript:;" ' +
+                                    'class="layui-btn layui-btn-success layui-btn-xs" ' +
+                                    'data-full="false" ' +
+                                    'data-auth="edit" ' +
+                                    'data-open="' + init.edit_url + '/id/' + pkValue + '" ' +
+                                    'data-title="编辑">编辑</a> ';
+                            }
+
+                            if (ea.checkPermission('delete', init.table_elem)) {
+                                html += '<a href="javascript:;" ' +
+                                    'class="layui-btn layui-btn-danger layui-btn-xs"' +
+                                    'data-full="false" ' +
+                                    'data-auth="delete" ' +
+                                    'data-request="' + init.delete_url + '?id=' + pkValue + '" ' +
+                                    'data-title="确定删除?">删除</a> ';
+                            }
+
+                            html += '<a href="javascript:;" ' +
+                                'class="layui-btn layui-btn-xs layui-btn-warm" ' +
+                                'data-full="false" ' +
+                                'data-auth="false" ' +
+                                'data-open="mall/phone/index?mall_data_id=' + pkValue + '" ' +
+                                'data-title="手机号列表">手机号列表</a> ';
+
+                            return html;
+                        }
                     }
                 ]],
             });

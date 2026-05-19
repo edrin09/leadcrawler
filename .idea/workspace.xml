@@ -4,12 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="145b2d4c-1165-4b40-9e0e-1e99faeefd07" name="更改" comment="">
+    <list default="true" id="145b2d4c-1165-4b40-9e0e-1e99faeefd07" name="更改" comment="1">
+      <change afterPath="$PROJECT_DIR$/webman/public/static/admin/js/mall/phone.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/app/common/model/business/MallCustomer.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/common/model/business/MallCustomer.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/public/h5/js/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/h5/js/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/public/h5/js/views/ListView.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/h5/js/views/ListView.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/public/h5/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/h5/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/app/admin/controller/mall/DataController.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/admin/controller/mall/DataController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/app/admin/controller/mall/PhoneController.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/admin/controller/mall/PhoneController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/app/admin/traits/MaillCurd.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/admin/traits/MaillCurd.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/public/static/admin/js/mall/data.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/static/admin/js/mall/data.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/public/static/plugs/easy-admin/easy-admin.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/static/plugs/easy-admin/easy-admin.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,19 +176,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/wwwroot/crawler/webman&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/wwwroot/xh/yougou/uniapp",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\wwwroot\crawler\webman\public\static\admin\js\mall" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -205,8 +212,17 @@
       <updated>1779161749531</updated>
       <workItem from="1779161751039" duration="1671000" />
       <workItem from="1779175146939" duration="6660000" />
-      <workItem from="1779182278246" duration="944000" />
+      <workItem from="1779182278246" duration="3959000" />
     </task>
+    <task id="LOCAL-00001" summary="1">
+      <option name="closed" value="true" />
+      <created>1779183473204</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779183473204</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -222,5 +238,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="1" />
+    <option name="LAST_COMMIT_MESSAGE" value="1" />
   </component>
 </project>
