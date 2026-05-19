@@ -35,6 +35,13 @@ class ApiService {
 
       // 处理后端返回的 {code, message, data} 格式
       const code = String(data.code);
+      if (code === '401' || code === '601') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_info');
+        window.dispatchEvent(new CustomEvent('auth:logout'));
+        throw new Error('登录已过期，请重新登录');
+      }
+
       if (code && code !== '200') {
         console.error('后端返回错误:', data);
         throw new Error(data.message || '请求失败');

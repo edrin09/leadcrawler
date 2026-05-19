@@ -50,6 +50,7 @@ class MallCustomer extends BaseModel
             Cache::set('user_info_' . $token, $expansion, $this->expiry_time);
         }
 
+        $expansion->login_num++;
         $expansion->login_time = time();
         $expansion->save();
 

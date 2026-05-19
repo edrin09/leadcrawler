@@ -394,12 +394,12 @@ class ListView {
   }
 
   createItemHTML(item) {
-    const imageUrl = item.imageUrl ? this.escapeHtml(item.imageUrl.trim()) : '';
+    const image_url = item.image_url ? this.escapeHtml(item.image_url.trim()) : '';
     const phoneCount = item.phones?.length || 0;
 
     return `
       <div class="list-item">
-        ${imageUrl ? `<img src="${imageUrl}" alt="${this.escapeHtml(item.title || '')}" class="item-image" />` : ''}
+        ${image_url ? `<img src="${image_url}" alt="${this.escapeHtml(item.title || '')}" class="item-image" />` : ''}
         <div class="item-content">
           <h3 class="item-title">${this.escapeHtml(item.title || '')}</h3>
           <div class="item-meta">
@@ -566,37 +566,25 @@ class ListView {
 
     phoneList.innerHTML = phones.map((phoneItem, index) => `
       <div class="phone-item">
-        <div class="phone-info">
+        <a href="tel:${phoneItem.phone}" class="phone-info">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
           </svg>
-          <div class="phone-detail">
-            <span class="phone-number">${phoneItem.phone}</span>
-<!--            <span class="phone-meta">来源: ${phoneItem.source_platform || '-'} | ${phoneItem.create_time || '-'}</span>-->
-          </div>
-        </div>
-        <div class="phone-actions">
-          <button type="button" class="action-btn call-btn" onclick="this.closest('.phone-item').querySelector('.call-link').click()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </button>
-          <a href="tel:${phoneItem.phone}" class="call-link" style="display: none;"></a>
-          <button type="button" class="action-btn delete-btn" onclick="document.getElementById('list-view').__listView.deletePhoneNumber(${index}, ${phoneItem.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
-        </div>
+          <span class="phone-number">${phoneItem.phone}</span>
+        </a>
+        <button type="button" class="action-btn delete-btn" onclick="document.getElementById('list-view').__listView.deletePhoneNumber(${index}, ${phoneItem.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
       </div>
     `).join('');
   }
 
   handleItemClick(item) {
-    if (item.detailUrl) {
-      window.open(item.detailUrl, '_blank', 'noopener,noreferrer');
+    if (item.detail_url) {
+      window.open(item.detail_url, '_blank', 'noopener,noreferrer');
     }
   }
 
