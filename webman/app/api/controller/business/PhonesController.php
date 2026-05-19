@@ -62,7 +62,7 @@ class PhonesController extends ApiMallComm
         $add_data['source_platform'] = '前台主动添加';
 
         $this->model->save($add_data);
-        
+
         return $this->renderSuccess();
     }
 }
