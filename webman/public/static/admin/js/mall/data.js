@@ -33,6 +33,13 @@ define(["jquery", "easy-admin"], function ($, ea) {
                         templet: ea.table.select
                     },
                     {
+                        field: 'image_url',
+                        width: 80,
+                        title: '图片',
+                        align: 'left',
+                        templet: ea.table.image
+                    },
+                    {
                         field: 'create_time',
                         width: 160,
                         title: '采集时间',
@@ -40,12 +47,18 @@ define(["jquery", "easy-admin"], function ($, ea) {
                         search: 'range'
                     },
                     {
+                        field: 'phone_count',
+                        width: 80,
+                        title: '手机号数量',
+                        align: 'left'
+                    },
+                    {
                         field: 'title',
                         minWidth: 600,
                         title: '标题',
                         align: 'left',
                         templet: function (d) {
-                            return '<a href="' + d.detailUrl + '" target="_blank" rel="noopener noreferrer">' + d.title + '</a>';
+                            return '<a href="' + d.detail_url + '" target="_blank" rel="noopener noreferrer">' + d.title + '</a>';
                         }
                     },
                     // {

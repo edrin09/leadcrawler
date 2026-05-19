@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const csvStorage = require('./saveCsv');
 const mysqlStorage = require('./saveMysql');
+const sqliteStorage = require('./saveSqlite');
 
 function getStorageType() {
   const type = process.env.STORAGE_TYPE || 'csv';
@@ -36,6 +37,17 @@ async function saveData(data, options = {}) {
     });
   }
 
+  if (storageType === 'sqlite') {
+    const dbName = options.databaseName || getDatabaseName();
+    const tableName = options.tableName || getTableName();
+
+    return await sqliteStorage.saveData(data, {
+      databaseName: dbName,
+      tableName: tableName,
+      outputDir: options.outputDir
+    });
+  }
+
   if (storageType === 'csv') {
     const count = csvStorage.saveData(data, options.outputDir);
     return {
@@ -54,5 +66,6 @@ module.exports = {
   getDatabaseName,
   getTableName,
   mysqlStorage,
-  csvStorage
+  csvStorage,
+  sqliteStorage
 };
