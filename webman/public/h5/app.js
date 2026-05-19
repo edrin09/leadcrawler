@@ -32,6 +32,7 @@ class App {
 
     this.loginView = new LoginView(loginViewEl);
     this.listView = new ListView(listViewEl);
+    listViewEl.__listView = this.listView;
   }
 }
 

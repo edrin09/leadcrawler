@@ -8,5 +8,5 @@ class MallPhones extends BaseModel
 {
     public $pk = 'id';
     public $name = 'mall_phones';
-    public $field = 'id,title,phone,source_platform,create_time';
+    public $field = 'id,phone,source_platform,create_time';
 }

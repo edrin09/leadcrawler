@@ -24,7 +24,7 @@ class ApiService {
     try {
       const response = await fetch(url, config);
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 601) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_info');
         window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -89,6 +89,46 @@ class ApiService {
       }
     };
     return this.post('/business/crawler/getList', body);
+  }
+
+  async getItemPhones(id) {
+    const token = localStorage.getItem('auth_token');
+    const body = {
+      authenticate: {
+        token: token || ''
+      },
+      parameter: {
+        id: id
+      }
+    };
+    return this.post('/business/phones/getItemPhones', body);
+  }
+
+  async InvalidPhoneNumber(id) {
+    const token = localStorage.getItem('auth_token');
+    const body = {
+      authenticate: {
+        token: token || ''
+      },
+      parameter: {
+        id: id
+      }
+    };
+    return this.post('/business/phones/saveInvalidPhone', body);
+  }
+
+  async addPhone(mallDataId, phone) {
+    const token = localStorage.getItem('auth_token');
+    const body = {
+      authenticate: {
+        token: token || ''
+      },
+      parameter: {
+        mall_data_id: mallDataId,
+        phone: phone
+      }
+    };
+    return this.post('/business/phones/addPhone', body);
   }
 }
 

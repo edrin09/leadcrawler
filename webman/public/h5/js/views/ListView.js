@@ -9,6 +9,7 @@ class ListView {
     this.isLoading = false;
     this.hasMore = true;
     this.listData = [];
+    this.currentItem = null;
     this.render();
     this.bindEvents();
   }
@@ -54,8 +55,54 @@ class ListView {
         <div id="load-more-container" class="load-more-container" style="display: none;">
           <button type="button" class="load-more-btn" id="load-more-btn">加载更多</button>
         </div>
-        <div id="no-more-data" class="no-more-data" style="display: none;">已加载全部数据</div>
-      </main>
+     <div id="no-more-data" class="no-more-data" style="display: none;">已加载全部数据</div>
+        </main>
+        <div id="phone-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-container">
+            <div class="modal-header">
+              <h3>手机号列表</h3>
+              <button type="button" class="modal-close" id="phone-modal-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div id="phone-list" class="phone-list">
+                <div class="empty-phone">暂无手机号</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="add-phone-btn" id="add-phone-btn">添加手机号</button>
+            </div>
+          </div>
+        </div>
+        <div id="add-phone-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-container small">
+            <div class="modal-header">
+              <h3>添加手机号</h3>
+              <button type="button" class="modal-close" id="add-phone-close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label>手机号</label>
+                <input type="tel" id="phone-input" placeholder="请输入手机号" maxlength="11">
+                <div class="error-message" id="phone-error"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" id="add-phone-cancel">取消</button>
+              <button type="button" class="btn-confirm" id="add-phone-submit">确认添加</button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }
 
@@ -85,6 +132,44 @@ class ListView {
     window.addEventListener('scroll', () => {
       if (this.shouldAutoLoad()) {
         this.loadMore();
+      }
+    });
+
+    document.getElementById('phone-modal-close')?.addEventListener('click', () => {
+      this.closePhoneModal();
+    });
+
+    document.getElementById('phone-modal')?.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('phone-modal')) {
+        this.closePhoneModal();
+      }
+    });
+
+    document.getElementById('add-phone-btn')?.addEventListener('click', () => {
+      this.showAddPhoneModal();
+    });
+
+    document.getElementById('add-phone-close')?.addEventListener('click', () => {
+      this.closeAddPhoneModal();
+    });
+
+    document.getElementById('add-phone-modal')?.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('add-phone-modal')) {
+        this.closeAddPhoneModal();
+      }
+    });
+
+    document.getElementById('add-phone-cancel')?.addEventListener('click', () => {
+      this.closeAddPhoneModal();
+    });
+
+    document.getElementById('add-phone-submit')?.addEventListener('click', () => {
+      this.addPhoneNumber();
+    });
+
+    document.getElementById('phone-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.addPhoneNumber();
       }
     });
   }
@@ -268,7 +353,18 @@ class ListView {
     container.innerHTML = items.map(item => this.createItemHTML(item)).join('');
 
     container.querySelectorAll('.list-item').forEach((el, index) => {
-      el.addEventListener('click', () => this.handleItemClick(this.listData[index]));
+      el.addEventListener('click', (e) => {
+        if (!e.target.closest('.view-phones-btn')) {
+          this.handleItemClick(this.listData[index]);
+        }
+      });
+    });
+
+    container.querySelectorAll('.view-phones-btn').forEach((btn, index) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showPhoneModal(this.listData[index]);
+      });
     });
   }
 
@@ -281,15 +377,25 @@ class ListView {
 
     container.querySelectorAll('.list-item:not([data-bound])').forEach((el, index) => {
       el.setAttribute('data-bound', 'true');
-      const dataIndex = this.listData.indexOf(items[index]);
-      if (dataIndex !== -1) {
-        el.addEventListener('click', () => this.handleItemClick(items[index]));
-      }
+      el.addEventListener('click', (e) => {
+        if (!e.target.closest('.view-phones-btn')) {
+          this.handleItemClick(items[index]);
+        }
+      });
+    });
+
+    container.querySelectorAll('.view-phones-btn:not([data-bound])').forEach((btn, index) => {
+      btn.setAttribute('data-bound', 'true');
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.showPhoneModal(items[index]);
+      });
     });
   }
 
   createItemHTML(item) {
     const imageUrl = item.imageUrl ? this.escapeHtml(item.imageUrl.trim()) : '';
+    const phoneCount = item.phones?.length || 0;
 
     return `
       <div class="list-item">
@@ -305,6 +411,12 @@ class ListView {
             <span>采集时间: ${item.create_time}</span>
           </div>
         </div>
+        <button type="button" class="view-phones-btn" data-item-id="${item.id}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <span>查看手机号${phoneCount > 0 ? `(${phoneCount})` : ''}</span>
+        </button>
       </div>
     `;
   }
@@ -315,6 +427,172 @@ class ListView {
     return div.innerHTML;
   }
 
+  async showPhoneModal(item) {
+    this.currentItem = item;
+    const modal = document.getElementById('phone-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      this.renderPhoneList(true);
+
+      try {
+        const response = await api.getItemPhones(item.id);
+        this.currentItem.phones = response || [];
+        this.renderPhoneList(false);
+      } catch (error) {
+        console.error('获取手机号失败:', error);
+        this.renderPhoneList(false);
+      }
+    }
+  }
+
+  closePhoneModal() {
+    const modal = document.getElementById('phone-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  showAddPhoneModal() {
+    const modal = document.getElementById('add-phone-modal');
+    const input = document.getElementById('phone-input');
+    const error = document.getElementById('phone-error');
+    if (modal) {
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    if (error) {
+      error.style.display = 'none';
+    }
+  }
+
+  closeAddPhoneModal() {
+    const modal = document.getElementById('add-phone-modal');
+    if (modal) {
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  async addPhoneNumber() {
+    const input = document.getElementById('phone-input');
+    const error = document.getElementById('phone-error');
+    const phone = input?.value?.trim();
+
+    if (!phone) {
+      if (error) {
+        error.textContent = '请输入手机号';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      if (error) {
+        error.textContent = '请输入正确的手机号';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!this.currentItem) {
+      if (error) {
+        error.textContent = '操作失败';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    const phoneExists = this.currentItem.phones?.some(p => p.phone === phone);
+    if (phoneExists) {
+      if (error) {
+        error.textContent = '该手机号已存在';
+        error.style.display = 'block';
+      }
+      return;
+    }
+
+    try {
+      await api.addPhone(this.currentItem.id, phone);
+      alert('添加成功');
+      this.closeAddPhoneModal();
+      this.showPhoneModal(this.currentItem);
+    } catch (err) {
+      console.error('添加手机号失败:', err);
+      if (error) {
+        error.textContent = '添加失败，请稍后重试';
+        error.style.display = 'block';
+      }
+    }
+  }
+
+  async deletePhoneNumber(index, phoneId) {
+    if (!this.currentItem?.phones) return;
+
+    if (!confirm('确定要删除该手机号吗？')) {
+      return;
+    }
+
+    try {
+      await api.InvalidPhoneNumber(phoneId);
+      this.currentItem.phones.splice(index, 1);
+      this.renderPhoneList(false);
+    } catch (error) {
+      console.error('删除手机号失败:', error);
+      alert('删除失败，请稍后重试');
+    }
+  }
+
+  renderPhoneList(loading = false) {
+    const phoneList = document.getElementById('phone-list');
+    if (!phoneList || !this.currentItem) return;
+
+    if (loading) {
+      phoneList.innerHTML = '<div class="phone-loading">加载中...</div>';
+      return;
+    }
+
+    const phones = this.currentItem.phones || [];
+
+    if (phones.length === 0) {
+      phoneList.innerHTML = '<div class="empty-phone">暂无手机号</div>';
+      return;
+    }
+
+    phoneList.innerHTML = phones.map((phoneItem, index) => `
+      <div class="phone-item">
+        <div class="phone-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          <div class="phone-detail">
+            <span class="phone-number">${phoneItem.phone}</span>
+<!--            <span class="phone-meta">来源: ${phoneItem.source_platform || '-'} | ${phoneItem.create_time || '-'}</span>-->
+          </div>
+        </div>
+        <div class="phone-actions">
+          <button type="button" class="action-btn call-btn" onclick="this.closest('.phone-item').querySelector('.call-link').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </button>
+          <a href="tel:${phoneItem.phone}" class="call-link" style="display: none;"></a>
+          <button type="button" class="action-btn delete-btn" onclick="document.getElementById('list-view').__listView.deletePhoneNumber(${index}, ${phoneItem.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
 
   handleItemClick(item) {
     if (item.detailUrl) {

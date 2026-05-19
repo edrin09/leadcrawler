@@ -5,17 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="145b2d4c-1165-4b40-9e0e-1e99faeefd07" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/crawler/utils/saveSqlite.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webman/app/admin/controller/mall/PhoneController.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/webman/app/common/model/business/MallPhones.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/webman/app/api/controller/business/PhonesController.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/crawler/utils/storageFactory.js" beforeDir="false" afterPath="$PROJECT_DIR$/crawler/utils/storageFactory.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/app/common/model/business/MallData.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/common/model/business/MallData.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/config/route.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/config/route.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webman/public/static/admin/js/mall/data.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/static/admin/js/mall/data.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/app/common/model/business/MallPhones.php" beforeDir="false" afterPath="$PROJECT_DIR$/webman/app/common/model/business/MallPhones.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webman/public/h5/js/views/ListView.js" beforeDir="false" afterPath="$PROJECT_DIR$/webman/public/h5/js/views/ListView.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -210,7 +203,7 @@
       <option name="presentableId" value="Default" />
       <updated>1779161749531</updated>
       <workItem from="1779161751039" duration="1671000" />
-      <workItem from="1779175146939" duration="922000" />
+      <workItem from="1779175146939" duration="6052000" />
     </task>
     <servers />
   </component>
