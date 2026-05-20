@@ -288,7 +288,28 @@ async function runGoofishCrawler() {
         const pageText = await newPage.textContent('body');
         const strippedText = extractor.stripHtmlTags(pageContent);
 
-        const phones = extractor.extractPhonesPublic(strippedText + pageContent);
+        // 只从可见文本提取号码（避免HTML属性中的噪音数据）
+        let phones = extractor.extractPhonesPublic(strippedText);
+
+        // 额外从 tel: 链接提取
+        const telPhones = extractor.extractFromAttributes(pageContent);
+        if (telPhones.length > 0) {
+          for (const p of telPhones) {
+            if (!phones.includes(p)) phones.push(p);
+          }
+        }
+
+        // 硬性过滤：号码只能从可见文本或tel链接中来
+        // 如果数量异常（>5），说明有噪音，缩小范围只取可信的
+        if (phones.length > 5) {
+          const contextFiltered = extractor.filterPhonesByContext(phones, strippedText, '');
+          const passedPhones = contextFiltered.filter(r => r && r.passed).map(r => r.phone);
+          if (passedPhones.length > 0) {
+            phones = passedPhones;
+          } else {
+            phones = [];
+          }
+        }
         const businessName = extractor.extractBusinessName(strippedText, pageContent);
         const businessInfo = extractor.extractBusinessInfo(strippedText);
         const keywords = extractor.extractSearchKeywords(strippedText, businessName);

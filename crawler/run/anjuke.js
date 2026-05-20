@@ -3,7 +3,8 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
-const extractor = require('../src/index');
+const unifiedExtractor = require('../src/extractor/unifiedExtractor');
+const dataInserter = require('../src/inserter/dataInserter');
 
 async function runAnjukeCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -107,7 +108,83 @@ async function runAnjukeCrawler() {
     return data;
   };
 
+  const closePopupsOnPage = async (page) => {
+    try {
+      const closeSelectors = [
+        '[class*="login-modal"] [class*="close"]',
+        '[class*="modal"] [aria-label="关闭"]',
+        '[class*="close"]',
+        '.icon-close'
+      ];
+      for (const sel of closeSelectors) {
+        const els = page.locator(sel);
+        const count = await els.count();
+        for (let i = 0; i < count; i++) {
+          const el = els.nth(i);
+          if (await el.isVisible({ timeout: 500 }).catch(() => false)) {
+            await el.click({ force: true });
+            await page.waitForTimeout(300);
+          }
+        }
+      }
+    } catch (e) { }
+  };
 
+  const extractDetailPageWithBrowser = async (detailUrl) => {
+    try {
+      const newPage = await context.newPage();
+      await newPage.setViewportSize({ width: 1920, height: 1080 });
+
+      try {
+        await newPage.goto(detailUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await newPage.waitForTimeout(3000);
+
+        await closePopupsOnPage(newPage);
+
+        await newPage.evaluate(() => { window.scrollBy(0, 500); });
+        await newPage.waitForTimeout(1000);
+
+        const pageContent = await newPage.content();
+        const pageText = await newPage.textContent('body');
+        const strippedText = unifiedExtractor.stripHtmlTags(pageContent);
+
+        const phones = unifiedExtractor.extractPhonesPublic(strippedText + pageContent);
+        const businessName = unifiedExtractor.extractBusinessName(strippedText, pageContent);
+        const businessInfo = unifiedExtractor.extractBusinessInfo(strippedText);
+        const keywords = unifiedExtractor.extractSearchKeywords(strippedText, businessName);
+
+        return {
+          success: true,
+          phones: phones,
+          business_name: businessName,
+          business_info: businessInfo,
+          keywords: keywords,
+          content: pageContent,
+          text: pageText
+        };
+      } catch (e) {
+        return {
+          success: false,
+          phones: [],
+          business_name: '',
+          business_info: {},
+          keywords: [],
+          error: e.message
+        };
+      } finally {
+        await newPage.close();
+      }
+    } catch (e) {
+      return {
+        success: false,
+        phones: [],
+        business_name: '',
+        business_info: {},
+        keywords: [],
+        error: e.message
+      };
+    }
+  };
 
   const clickNextPage = async () => {
     try {
@@ -151,6 +228,13 @@ async function runAnjukeCrawler() {
       await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForTimeout(3000);
 
+      const pageTitle = await page.title().catch(() => '');
+      const pageBody = await page.textContent('body').catch(() => '');
+      if (pageTitle.includes('验证码') || pageBody.includes('请输入验证码') || pageBody.includes('访问过于频繁')) {
+        console.log('  ⚠️ 检测到反爬验证码页面，当前IP已被安居客限制');
+        break;
+      }
+
       let pageNumber = 1;
       let hasNextPage = true;
 
@@ -165,13 +249,78 @@ async function runAnjukeCrawler() {
 
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-        const saveResult = await extractor.extractAndSave(pageData, {
-          timeout: 10000,
-          maxPlatforms: 6,
-          saveToDb: true
-        });
-        const savedCount = saveResult.save.saved || 0;
-        totalSaved += savedCount;
+        let savedCount = 0;
+        await dataInserter.initPool();
+        for (let i = 0; i < pageData.length; i++) {
+          const item = pageData[i];
+          const detailUrl = item.detailUrl;
+
+          console.log(`[${i + 1}/${pageData.length}] ${(item.title || '').substring(0, 30)}...`);
+
+          if (!detailUrl) {
+            console.log('  -> 无详情链接，跳过');
+            continue;
+          }
+
+          const existingId = await dataInserter.checkMallDataExists(detailUrl);
+          if (existingId) {
+            console.log(`  -> Already exists in DB (id=${existingId}), skipped`);
+            continue;
+          }
+
+          const detailInfo = await extractDetailPageWithBrowser(detailUrl);
+
+          const phoneCount = detailInfo.phones ? detailInfo.phones.length : 0;
+          if (phoneCount > 0) {
+            console.log(`  -> Found ${phoneCount} phone(s): ${detailInfo.phones.join(', ')}`);
+          } else {
+            console.log(`  -> No phones found`);
+          }
+
+          const mallDataRecord = {
+            title: item.title || '',
+            district: item.district || '',
+            price: item.price || '',
+            imageUrl: item.imageUrl || '',
+            detailUrl: detailUrl,
+            source: item.source || '',
+            business_name: detailInfo.business_name || '',
+            keywords: detailInfo.keywords || [],
+            business_info: detailInfo.business_info || {},
+            phone_count: phoneCount,
+            create_time: new Date(),
+          };
+
+          const insertResult = await dataInserter.insertMallData(mallDataRecord);
+          if (!insertResult.success) {
+            console.log(`  -> DB insert failed: ${insertResult.error}`);
+            continue;
+          }
+
+          const mallDataId = insertResult.insertId;
+
+          if (phoneCount > 0) {
+            const phoneRecords = detailInfo.phones.map(phone => ({
+              mall_data_id: mallDataId,
+              phone: phone,
+              confidence_level: 'medium',
+              confidence_score: 50,
+              source_count: 1,
+              sources: [{ source: 'detail_page', url: detailUrl }],
+              mall_data_url: detailUrl,
+              mall_data_title: item.title || '',
+              source_platform: item.source || '',
+              create_time: new Date(),
+            }));
+            const phoneInsertResult = await dataInserter.insertPhoneRecords(phoneRecords);
+            await dataInserter.updateMallDataPhoneCount(mallDataId, phoneCount);
+            console.log(`  -> Saved to DB (id=${mallDataId}, phones=${phoneCount})`);
+          } else {
+            console.log(`  -> Saved to DB (id=${mallDataId}, phones=0)`);
+          }
+
+          savedCount++;
+        }
 
         if (savedCount === 0) {
           console.log('无新数据，跳过后续页面');
