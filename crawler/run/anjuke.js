@@ -37,9 +37,23 @@ async function runAnjukeCrawler() {
           }
 
           let detailUrl = '';
-          const linkMatch = itemHtml.match(/href="(https:\/\/xa\.sydc\.anjuke\.com\/sp-zu\/d[^"]*)"/);
+          const linkMatch = itemHtml.match(/href="(https:\/\/[^"]*sydc\.anjuke\.com[^"]*)"/) || itemHtml.match(/href="(https:\/\/[^"]*anjuke\.com[^"]*)"/) || itemHtml.match(/href="(\/[^"]+)"/);
           if (linkMatch && linkMatch[1]) {
             detailUrl = linkMatch[1].split('?')[0];
+            if (detailUrl.startsWith('/')) {
+              detailUrl = 'https://xa.sydc.anjuke.com' + detailUrl;
+            }
+          }
+
+          if (!detailUrl) {
+            const aTag = item.locator('a').first();
+            detailUrl = await aTag.getAttribute('href').catch(() => '');
+            if (detailUrl) {
+              detailUrl = detailUrl.split('?')[0];
+              if (detailUrl.startsWith('/')) {
+                detailUrl = 'https://xa.sydc.anjuke.com' + detailUrl;
+              }
+            }
           }
 
           let imageUrl = '';
