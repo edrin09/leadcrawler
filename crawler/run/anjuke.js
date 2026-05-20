@@ -30,6 +30,12 @@ async function runAnjukeCrawler() {
           const item = items.nth(i);
           const itemHtml = await item.evaluate(el => el.outerHTML);
 
+          const hasJinpuTag = itemHtml.includes('class="jinpu-list-tag"');
+          if (hasJinpuTag) {
+            console.log(`跳过第 ${i + 1} 条: 包含jinpu-list-tag标签`);
+            continue;
+          }
+
           let detailUrl = '';
           const linkMatch = itemHtml.match(/href="(https:\/\/xa\.sydc\.anjuke\.com\/sp-zu\/d[^"]*)"/);
           if (linkMatch && linkMatch[1]) {
@@ -146,9 +152,9 @@ async function runAnjukeCrawler() {
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
         const saveResult = await extractor.extractAndSave(pageData, {
-            timeout: 10000,
-            maxPlatforms: 6,
-            saveToDb: true
+          timeout: 10000,
+          maxPlatforms: 6,
+          saveToDb: true
         });
         const savedCount = saveResult.save.saved || 0;
         totalSaved += savedCount;

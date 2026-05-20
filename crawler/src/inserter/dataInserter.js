@@ -253,6 +253,53 @@ async function updateMallDataPhoneCount(mallDataId, phoneCount) {
     }
 }
 
+async function getMallDataById(mallDataId) {
+    const connection = await getConnection();
+    try {
+        const [rows] = await connection.execute(
+            'SELECT * FROM ed_mall_data WHERE id = ? LIMIT 1',
+            [mallDataId]
+        );
+        return rows[0] || null;
+    } finally {
+        connection.release();
+    }
+}
+
+async function updateMallDataBusinessInfo(mallDataId, data) {
+    const connection = await getConnection();
+    try {
+        const updates = [];
+        const params = [];
+
+        if (data.business_name !== undefined) {
+            updates.push('business_name = ?');
+            params.push(data.business_name);
+        }
+        if (data.keywords !== undefined) {
+            updates.push('keywords = ?');
+            params.push(JSON.stringify(data.keywords));
+        }
+        if (data.business_info !== undefined) {
+            updates.push('business_info = ?');
+            params.push(JSON.stringify(data.business_info));
+        }
+
+        if (updates.length === 0) {
+            return { success: true };
+        }
+
+        params.push(mallDataId);
+        const sql = `UPDATE ed_mall_data SET ${updates.join(', ')} WHERE id = ?`;
+        await connection.execute(sql, params);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    } finally {
+        connection.release();
+    }
+}
+
 async function findPhonesByMallDataId(mallDataId) {
     const connection = await getConnection();
     try {
@@ -478,6 +525,8 @@ module.exports = {
     insertMallData,
     insertPhoneRecords,
     updateMallDataPhoneCount,
+    getMallDataById,
+    updateMallDataBusinessInfo,
     findPhonesByMallDataId,
     findPhonesByPhone,
     findPhoneById,

@@ -209,19 +209,28 @@ function cleanPhone(phone) {
         }
     }
 
+    if (/^0\d{2,3}\d{7,8}$/.test(cleaned)) {
+        return null;
+    }
+
     if (cleaned.startsWith('1') && cleaned.length === 11) {
         const second = cleaned[1];
         if (['3', '4', '5', '6', '7', '8', '9'].includes(second)) {
+            const prefix = cleaned.slice(0, 3);
+            const invalidPrefixes = [
+                '170', '171', '167', '162', '164', '165',
+                '168', '169'
+            ];
+            if (invalidPrefixes.includes(prefix)) {
+                return null;
+            }
+
             const uniqueDigits = new Set(cleaned.split(''));
             if (uniqueDigits.size >= 2) {
                 return cleaned;
             }
         }
         return null;
-    }
-
-    if (/^0\d{2,3}\d{7,8}$/.test(cleaned)) {
-        return cleaned;
     }
 
     return null;
@@ -1286,4 +1295,5 @@ module.exports = {
     validatePhoneWithAI,
     extractKeywordsWithAI,
     callAIEndpoint,
+    stripHtmlTags,
 };
