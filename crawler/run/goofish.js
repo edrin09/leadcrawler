@@ -240,21 +240,22 @@ async function runGoofishCrawler() {
 
           const district = extractDistrict(textContent);
 
-          if (detailUrl || imageUrl) {
+          if ((detailUrl || imageUrl) && title) {
             data.push({
-              title: title || '',
+              title: title,
               district: district || '',
               price: price || '',
               imageUrl: imageUrl || '',
               detailUrl: detailUrl || '',
               source: 'goofish'
             });
-            const showTitle = title ? title.substring(0, 20) : '(无标题)';
-            console.log(`采集第 ${i + 1}/${count} 条: ${showTitle} | ${price} | ${district}}`);
+            console.log(`采集第 ${i + 1}/${count} 条: ${title.substring(0, 20)} | ${price} | ${district}}`);
             if (i < 3) {
               console.log(`  详情: ${detailUrl.substring(0, 60)}...`);
               console.log(`  图片: ${imageUrl.substring(0, 60)}...`);
             }
+          } else if (!title) {
+            console.log(`跳过第 ${i + 1} 条: 标题为空`);
           }
         } catch (e) {
           console.log(`采集第 ${i + 1} 条失败: ${e.message}`);
@@ -706,8 +707,7 @@ async function runGoofishCrawler() {
 
           for (let i = 0; i < pageData.length; i++) {
             const item = pageData[i];
-            const title = item.title ? item.title.substring(0, 30) : '(无标题)';
-            console.log(`\n[${i + 1}/${pageData.length}] ${title}...`);
+            console.log(`\n[${i + 1}/${pageData.length}] ${item.title.substring(0, 30)}...`);
 
             if (!item.detailUrl) {
               console.log('  -> SKIP - 无详情URL');
@@ -720,26 +720,14 @@ async function runGoofishCrawler() {
               continue;
             }
 
-            const detailResult = await extractDetailPageWithBrowser(item.detailUrl);
-            const phones = detailResult.success ? detailResult.phones : [];
-
-            if (phones.length > 0) {
-              console.log(`  -> 找到 ${phones.length} 个手机号: ${phones.join(', ')}`);
-            } else {
-              console.log(`  -> 未找到手机号`);
-            }
-
             const mallDataRecord = {
-              title: item.title || '',
+              title: item.title,
               district: item.district || '',
               price: item.price || '',
               imageUrl: item.imageUrl || item.image_url || '',
               detailUrl: item.detailUrl,
               source: item.source || 'goofish',
-              business_name: detailResult.business_name || '',
-              keywords: detailResult.keywords || [],
-              business_info: detailResult.business_info || {},
-              phone_count: phones.length,
+              phone_count: 0,
               create_time: new Date(),
             };
 
@@ -749,29 +737,9 @@ async function runGoofishCrawler() {
               continue;
             }
 
-            const mallDataId = insertResult.insertId;
-
-            if (phones.length > 0) {
-              const phoneRecords = phones.map(phone => ({
-                mall_data_id: mallDataId,
-                phone: phone,
-                confidence_level: 'medium',
-                confidence_score: 50,
-                source_count: 1,
-                sources: [{ source: 'detail_page', url: item.detailUrl }],
-                mall_data_url: item.detailUrl,
-                mall_data_title: item.title || '',
-                source_platform: 'goofish',
-                create_time: new Date(),
-              }));
-
-              await dataInserter.insertPhoneRecords(phoneRecords);
-              await dataInserter.updateMallDataPhoneCount(mallDataId, phones.length);
-            }
-
             savedCount++;
             totalSaved++;
-            console.log(`  -> 保存到数据库成功 (id=${mallDataId}, phones=${phones.length})`);
+            console.log(`  -> 保存到数据库成功 (id=${insertResult.insertId}, phones=0)`);
 
             const waitBetweenItems = Math.floor(Math.random() * 3) + 2;
             await page.waitForTimeout(waitBetweenItems * 1000);

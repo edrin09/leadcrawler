@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
-const extractor = require('../src/index');
+const dataInserter = require('../src/inserter/dataInserter');
 
 async function run58Crawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -30,8 +30,6 @@ async function run58Crawler() {
       if (captchaExists) {
         console.log('检测到验证码页面，需要手动验证');
         await page.screenshot({ path: '58_captcha.png' });
-        console.log('已保存验证码截图到 58_captcha.png');
-        console.log('请完成验证码验证后，在浏览器中手动点击继续，然后按回车键继续脚本...');
         await new Promise(resolve => {
           process.stdin.once('data', resolve);
         });
@@ -83,16 +81,18 @@ async function run58Crawler() {
             imageUrl = imgMatch[1];
           }
 
-          if (detailUrl) {
+          if (detailUrl && title) {
             data.push({
-              title: title || '',
+              title: title,
               district: district || '',
               price: price || '',
               imageUrl: imageUrl || '',
-              detailUrl: detailUrl || '',
+              detailUrl: detailUrl,
               source: '58'
             });
             console.log(`采集第 ${i + 1}/${count} 条: ${title.substring(0, 30)} | ${price} | ${district}`);
+          } else if (!title) {
+            console.log(`跳过第 ${i + 1} 条: 标题为空`);
           }
         } catch (e) {
           console.log(`采集第 ${i + 1} 条失败: ${e.message}`);
@@ -160,12 +160,32 @@ async function run58Crawler() {
 
         console.log(`第 ${pageNumber} 页采集完成，共 ${pageData.length} 条数据`);
 
-        const saveResult = await extractor.extractAndSave(pageData, {
-          timeout: 10000,
-          maxPlatforms: 6,
-          saveToDb: true
-        });
-        const savedCount = saveResult.save.saved || 0;
+        await dataInserter.initPool();
+        let savedCount = 0;
+        for (const item of pageData) {
+          const existingId = await dataInserter.checkMallDataExists(item.detailUrl);
+          if (existingId) {
+            console.log(`  -> 已存在 (id=${existingId})，跳过`);
+            continue;
+          }
+          const record = {
+            title: item.title,
+            district: item.district || '',
+            price: item.price || '',
+            imageUrl: item.imageUrl || '',
+            detailUrl: item.detailUrl,
+            source: item.source || '58',
+            phone_count: 0,
+            create_time: new Date(),
+          };
+          const result = await dataInserter.insertMallData(record);
+          if (result.success) {
+            savedCount++;
+            console.log(`  -> 保存成功 (id=${result.insertId})`);
+          } else {
+            console.log(`  -> 保存失败: ${result.error}`);
+          }
+        }
         totalSaved += savedCount;
 
         if (savedCount === 0) {

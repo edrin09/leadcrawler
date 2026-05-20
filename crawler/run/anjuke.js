@@ -87,16 +87,18 @@ async function runAnjukeCrawler() {
             district = districtMatch[1].trim();
           }
 
-          if (detailUrl) {
+          if (detailUrl && title) {
             data.push({
-              title: title || '',
+              title: title,
               district: district || '',
               price: price || '',
               imageUrl: imageUrl || '',
-              detailUrl: detailUrl || '',
+              detailUrl: detailUrl,
               source: 'anjuke'
             });
             console.log(`采集第 ${i + 1}/${count} 条: ${title.substring(0, 30)} | ${price} | ${district}`);
+          } else if (!title) {
+            console.log(`跳过第 ${i + 1} 条: 标题为空`);
           }
         } catch (e) {
           console.log(`采集第 ${i + 1} 条失败: ${e.message}`);
@@ -264,62 +266,29 @@ async function runAnjukeCrawler() {
 
           const existingId = await dataInserter.checkMallDataExists(detailUrl);
           if (existingId) {
-            console.log(`  -> Already exists in DB (id=${existingId}), skipped`);
+            console.log(`  -> 已存在 (id=${existingId})，跳过`);
             continue;
           }
 
-          const detailInfo = await extractDetailPageWithBrowser(detailUrl);
-
-          const phoneCount = detailInfo.phones ? detailInfo.phones.length : 0;
-          if (phoneCount > 0) {
-            console.log(`  -> Found ${phoneCount} phone(s): ${detailInfo.phones.join(', ')}`);
-          } else {
-            console.log(`  -> No phones found`);
-          }
-
           const mallDataRecord = {
-            title: item.title || '',
+            title: item.title,
             district: item.district || '',
             price: item.price || '',
             imageUrl: item.imageUrl || '',
             detailUrl: detailUrl,
-            source: item.source || '',
-            business_name: detailInfo.business_name || '',
-            keywords: detailInfo.keywords || [],
-            business_info: detailInfo.business_info || {},
-            phone_count: phoneCount,
+            source: item.source || 'anjuke',
+            phone_count: 0,
             create_time: new Date(),
           };
 
           const insertResult = await dataInserter.insertMallData(mallDataRecord);
           if (!insertResult.success) {
-            console.log(`  -> DB insert failed: ${insertResult.error}`);
+            console.log(`  -> 入库失败: ${insertResult.error}`);
             continue;
           }
 
-          const mallDataId = insertResult.insertId;
-
-          if (phoneCount > 0) {
-            const phoneRecords = detailInfo.phones.map(phone => ({
-              mall_data_id: mallDataId,
-              phone: phone,
-              confidence_level: 'medium',
-              confidence_score: 50,
-              source_count: 1,
-              sources: [{ source: 'detail_page', url: detailUrl }],
-              mall_data_url: detailUrl,
-              mall_data_title: item.title || '',
-              source_platform: item.source || '',
-              create_time: new Date(),
-            }));
-            const phoneInsertResult = await dataInserter.insertPhoneRecords(phoneRecords);
-            await dataInserter.updateMallDataPhoneCount(mallDataId, phoneCount);
-            console.log(`  -> Saved to DB (id=${mallDataId}, phones=${phoneCount})`);
-          } else {
-            console.log(`  -> Saved to DB (id=${mallDataId}, phones=0)`);
-          }
-
           savedCount++;
+          console.log(`  -> 保存成功 (id=${insertResult.insertId})`);
         }
 
         if (savedCount === 0) {
