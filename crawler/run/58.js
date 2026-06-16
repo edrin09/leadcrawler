@@ -4,6 +4,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
 const dataInserter = require('../src/inserter/dataInserter');
+const { interventionClient } = require('../src/human-intervention');
 
 async function run58Crawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -28,12 +29,26 @@ async function run58Crawler() {
 
       const captchaExists = await page.locator('.pop .title').isVisible();
       if (captchaExists) {
-        console.log('检测到验证码页面，需要手动验证');
-        await page.screenshot({ path: '58_captcha.png' });
-        await new Promise(resolve => {
-          process.stdin.once('data', resolve);
-        });
-        await page.waitForTimeout(3000);
+        console.log('检测到验证码页面，通过远程交互请求人工处理');
+        const screenshot = await page.screenshot({ encoding: 'base64', type: 'png' });
+        const dataUri = `data:image/png;base64,${screenshot}`;
+        const result = await interventionClient.requestCaptcha(dataUri, '58同城检测到验证码，请输入验证码后继续');
+        if (result.status === 'resolved' && result.response) {
+          console.log(`收到操作员验证信息: ${result.response}`);
+          const captchaInput = page.locator('.pop input, input[placeholder*="验证码"], .captcha-input').first();
+          if (await captchaInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await captchaInput.fill(result.response);
+            await page.waitForTimeout(500);
+            const confirmBtn = page.locator('.pop .submit, .pop button[type="submit"], .pop a:has-text("验证"), .pop a:has-text("确认")').first();
+            if (await confirmBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+              await confirmBtn.click();
+            }
+          }
+          await page.waitForTimeout(5000);
+        } else {
+          console.log('验证请求超时或已取消，尝试继续...');
+          await page.waitForTimeout(5000);
+        }
       }
 
       const items = page.locator('.content-side-left ul li');

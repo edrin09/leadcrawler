@@ -5,6 +5,7 @@ const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
 const dataInserter = require('../src/inserter/dataInserter');
 const extractor = require('../src/extractor/unifiedExtractor');
+const { interventionClient } = require('../src/human-intervention');
 
 async function runGoofishCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -84,30 +85,33 @@ async function runGoofishCrawler() {
     try {
       const loginModal = page.locator('[class*="login-modal-wrap"]');
       if (await loginModal.isVisible({ timeout: 2000 }).catch(() => false)) {
-        console.log('发现登录弹窗，等待30秒让用户登录...');
-        const closeBtn = loginModal.locator('[class*="close"], button').first();
+        console.log('发现登录弹窗，通过远程交互请求人工处理');
 
         if (!loginModalHandled) {
           loginModalHandled = true;
-          console.log('等待30秒让用户完成登录...');
-          const startTime = Date.now();
-          while (Date.now() - startTime < 30000) {
-            const isVisible = await loginModal.isVisible({ timeout: 500 }).catch(() => false);
-            if (!isVisible) {
-              console.log('用户登录完成，登录弹窗已关闭');
-              break;
+          const screenshot = await page.screenshot({ encoding: 'base64', type: 'png' });
+          const dataUri = `data:image/png;base64,${screenshot}`;
+          const result = await interventionClient.requestQRLogin(dataUri, '闲鱼需要登录，请扫描二维码或输入登录凭证');
+          if (result.status === 'resolved') {
+            console.log('操作员已确认登录，等待弹窗关闭...');
+            for (let i = 0; i < 30; i++) {
+              const isVisible = await loginModal.isVisible({ timeout: 500 }).catch(() => false);
+              if (!isVisible) {
+                console.log('登录弹窗已关闭');
+                break;
+              }
+              await page.waitForTimeout(1000);
             }
-            await page.waitForTimeout(1000);
-          }
-          const stillVisible = await loginModal.isVisible({ timeout: 1000 }).catch(() => false);
-          if (stillVisible) {
-            console.log('登录等待超时，关闭弹窗');
+          } else {
+            console.log('登录请求超时或已取消，尝试关闭弹窗继续');
+            const closeBtn = loginModal.locator('[class*="close"], button').first();
             if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
               await closeBtn.click({ force: true });
             }
           }
         } else {
           console.log('再次发现登录弹窗，直接关闭');
+          const closeBtn = loginModal.locator('[class*="close"], button').first();
           if (await closeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
             await closeBtn.click({ force: true });
             await page.waitForTimeout(500);

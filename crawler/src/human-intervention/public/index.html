@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>远程交互 - 登录</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f5f5f5; display:flex; justify-content:center; align-items:center; min-height:100vh; }
+.login-card { background:#fff; border-radius:12px; padding:40px; width:400px; box-shadow:0 2px 20px rgba(0,0,0,0.08); }
+.login-card h1 { font-size:24px; margin-bottom:8px; color:#1a1a1a; }
+.login-card p { font-size:14px; color:#666; margin-bottom:24px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:14px; font-weight:500; color:#333; margin-bottom:6px; }
+.form-group input { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:6px; font-size:14px; outline:none; transition:border-color .2s; }
+.form-group input:focus { border-color:#e65100; }
+.btn { width:100%; padding:12px; background:#e65100; color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; transition:background .2s; }
+.btn:hover { background:#d44a00; }
+.btn:disabled { background:#ccc; cursor:not-allowed; }
+.error { color:#d32f2f; font-size:13px; margin-top:8px; display:none; }
+.hint { font-size:12px; color:#999; margin-top:12px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <h1>远程交互控制台</h1>
+  <p>请输入访问令牌以连接到采集系统</p>
+  <div class="form-group">
+    <label for="token">访问令牌</label>
+    <input type="password" id="token" placeholder="请输入 REMOTE_AUTH_TOKEN" autofocus>
+  </div>
+  <button class="btn" id="loginBtn" onclick="login()">连接</button>
+  <div class="error" id="errorMsg">令牌无效，请重试</div>
+  <div class="hint">提示：令牌在服务端 .env 的 REMOTE_AUTH_TOKEN 中配置</div>
+</div>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const tokenParam = urlParams.get('token');
+if (tokenParam) {
+  document.getElementById('token').value = tokenParam;
+  login();
+}
+function login() {
+  const token = document.getElementById('token').value.trim();
+  if (!token) { showError('请输入访问令牌'); return; }
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginBtn').textContent = '连接中...';
+  fetch('/api/health?token=' + encodeURIComponent(token))
+    .then(r => { if (!r.ok) throw new Error('无效令牌'); return r.json(); })
+    .then(() => { window.location.href = '/dashboard.html?token=' + encodeURIComponent(token); })
+    .catch(() => { showError('令牌无效或服务器无法连接'); document.getElementById('loginBtn').disabled = false; document.getElementById('loginBtn').textContent = '连接'; });
+}
+function showError(msg) { const el = document.getElementById('errorMsg'); el.textContent = msg; el.style.display = 'block'; }
+</script>
+</body>
+</html>

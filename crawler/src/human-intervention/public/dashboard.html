@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>远程交互 - 控制台</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#f5f5f5; }
+.header { background:#fff; border-bottom:1px solid #e0e0e0; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { font-size:20px; color:#1a1a1a; }
+.header .meta { font-size:13px; color:#666; }
+.container { max-width:900px; margin:24px auto; padding:0 16px; }
+.stats { display:flex; gap:16px; margin-bottom:24px; }
+.stat-card { background:#fff; border-radius:8px; padding:20px; flex:1; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+.stat-card .num { font-size:32px; font-weight:700; color:#e65100; }
+.stat-card .label { font-size:13px; color:#888; margin-top:4px; }
+.request-card { background:#fff; border-radius:8px; padding:20px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center; }
+.request-card .info { flex:1; }
+.request-card .info h3 { font-size:16px; color:#1a1a1a; }
+.request-card .info .detail { font-size:13px; color:#888; margin-top:4px; }
+.request-card .info .detail span { margin-right:16px; }
+.tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:500; }
+.tag-captcha { background:#fff3e0; color:#e65100; }
+.tag-login { background:#e3f2fd; color:#1565c0; }
+.tag-anti { background:#fce4ec; color:#c62828; }
+.tag-default { background:#f3f3f3; color:#555; }
+.request-card .actions { display:flex; gap:8px; }
+.btn { padding:8px 20px; border:none; border-radius:6px; font-size:14px; cursor:pointer; transition:background .2s; text-decoration:none; display:inline-block; }
+.btn-primary { background:#e65100; color:#fff; }
+.btn-primary:hover { background:#d44a00; }
+.btn-secondary { background:#f5f5f5; color:#333; }
+.btn-secondary:hover { background:#e0e0e0; }
+.empty { text-align:center; padding:60px 20px; color:#999; }
+.empty h2 { font-size:48px; margin-bottom:12px; }
+.empty p { font-size:15px; }
+.toast { position:fixed; bottom:24px; right:24px; background:#323232; color:#fff; padding:12px 24px; border-radius:8px; font-size:14px; opacity:0; transition:opacity .3s; z-index:999; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>远程交互控制台</h1>
+  <div class="meta" id="headerMeta">加载中...</div>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="statPending">0</div><div class="label">待处理</div></div>
+    <div class="stat-card"><div class="num" id="statResolved">0</div><div class="label">已处理</div></div>
+    <div class="stat-card"><div class="num" id="statTimeout">0</div><div class="label">已超时</div></div>
+  </div>
+  <div id="requestList"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const token = new URLSearchParams(window.location.search).get('token');
+if (!token) { window.location.href = '/'; }
+
+let allRequests = [];
+let socket = null;
+
+function connectSocket() {
+  socket = io({ auth: { token, role: 'operator' }, transports: ['websocket', 'polling'] });
+  socket.on('connect', () => { updateMeta('已连接 (实时)'); });
+  socket.on('disconnect', () => { updateMeta('已断开 (自动重连...)'); });
+  socket.on('operator:init', () => { loadRequests(); });
+  socket.on('verification:new', (data) => {
+    allRequests.unshift(data);
+    render();
+    showToast('新的验证请求: ' + data.title);
+  });
+  socket.on('verification:updated', (data) => {
+    const idx = allRequests.findIndex(r => r.id === data.id);
+    if (idx !== -1) {
+      allRequests.splice(idx, 1);
+      render();
+    }
+  });
+}
+
+async function loadRequests() {
+  try {
+    const r = await fetch('/api/requests?token=' + encodeURIComponent(token));
+    const data = await r.json();
+    allRequests = data.requests || [];
+    render();
+  } catch(e) { updateMeta('加载失败'); }
+}
+
+function render() {
+  const list = document.getElementById('requestList');
+  const pending = allRequests;
+  document.getElementById('statPending').textContent = pending.length;
+  if (pending.length === 0) {
+    list.innerHTML = '<div class="empty"><h2>✓</h2><p>目前没有待处理的验证请求</p></div>';
+    return;
+  }
+  list.innerHTML = pending.map(r => {
+    const time = new Date(r.timestamp).toLocaleTimeString('zh-CN');
+    const tagClass = { captcha:'tag-captcha', login_qr:'tag-login', login_modal:'tag-login', anti_bot:'tag-anti' }[r.type] || 'tag-default';
+    return '<div class="request-card">' +
+      '<div class="info">' +
+        '<h3>' + r.title + '</h3>' +
+        '<div class="detail">' +
+          '<span class="tag ' + tagClass + '">' + r.typeLabel + '</span>' +
+          '<span>' + r.crawler + '</span>' +
+          '<span>' + time + '</span>' +
+          '<span>' + (r.description || '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="actions">' +
+        '<a href="/verify.html?id=' + r.id + '&token=' + encodeURIComponent(token) + '" class="btn btn-primary">处理</a>' +
+        '<button class="btn btn-secondary" onclick="cancelRequest(\'' + r.id + '\')">取消</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function cancelRequest(id) {
+  try {
+    await fetch('/api/requests/' + id + '/cancel?token=' + encodeURIComponent(token), { method:'POST' });
+    showToast('请求已取消');
+    allRequests = allRequests.filter(r => r.id !== id);
+    render();
+  } catch(e) { showToast('取消失败'); }
+}
+
+function updateMeta(text) { document.getElementById('headerMeta').textContent = text; }
+function showToast(text) { const el = document.getElementById('toast'); el.textContent = text; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000); }
+
+loadRequests();
+connectSocket();
+</script>
+</body>
+</html>

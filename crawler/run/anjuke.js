@@ -5,6 +5,7 @@ const fs = require('fs');
 const { saveData } = require('../utils/storageFactory');
 const unifiedExtractor = require('../src/extractor/unifiedExtractor');
 const dataInserter = require('../src/inserter/dataInserter');
+const { interventionClient } = require('../src/human-intervention');
 
 async function runAnjukeCrawler() {
   const headlessMode = process.env.HEADLESS !== 'false';
@@ -233,8 +234,18 @@ async function runAnjukeCrawler() {
       const pageTitle = await page.title().catch(() => '');
       const pageBody = await page.textContent('body').catch(() => '');
       if (pageTitle.includes('验证码') || pageBody.includes('请输入验证码') || pageBody.includes('访问过于频繁')) {
-        console.log('  ⚠️ 检测到反爬验证码页面，当前IP已被安居客限制');
-        break;
+        console.log('  ⚠️ 检测到反爬验证码页面，通过远程交互请求人工处理');
+        const screenshot = await page.screenshot({ encoding: 'base64', type: 'png' });
+        const dataUri = `data:image/png;base64,${screenshot}`;
+        const result = await interventionClient.requestCaptcha(dataUri, '安居客检测到反爬验证码页面，请处理后继续采集');
+        if (result.status === 'resolved') {
+          console.log('  -> 操作员已处理，重新加载页面...');
+          await page.waitForTimeout(3000);
+          continue;
+        } else {
+          console.log('  -> 验证超时或已取消，跳过该地址');
+          break;
+        }
       }
 
       let pageNumber = 1;
