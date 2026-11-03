@@ -7,6 +7,9 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-1.45+-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
+GitHub：[edrin09/leadcrawler](https://github.com/edrin09/leadcrawler) ｜ Gitee 镜像：[edrin/leadcrawler](https://gitee.com/edrin/leadcrawler)
 
 ---
 
@@ -51,11 +54,22 @@
 
 ## 快速开始
 
+```bash
+# 国内推荐从 Gitee 克隆
+git clone https://gitee.com/edrin/leadcrawler.git
+# 或 git clone https://github.com/edrin09/leadcrawler.git
+```
+
 ### 方式一：Docker（推荐）
 
+代码以目录挂载方式进入容器，所以先在宿主机装好依赖：
+
 ```bash
-docker build -t crawler:latest -f docker/Dockerfile .
+cd crawler && npm install && npx playwright install chromium && cd ..
+cd webman && composer install && cd ..
+
 docker network create my_network
+docker build -t crawler:latest -f docker/Dockerfile .
 docker compose -f docker/docker-compose.yml up -d
 ```
 
@@ -64,15 +78,18 @@ docker compose -f docker/docker-compose.yml up -d
 ### 方式二：本地开发
 
 ```bash
-# 1. 爬虫服务
-cd crawler && npm install && npx playwright install chromium
-cp .env.example .env          # 按需修改
-node run/index.js
+# 1. 采集服务
+cd crawler
+npm install && npx playwright install chromium
+cp .env.example .env                                    # 按需修改采集开关与数据库
+node main.js                                            # 按 .env 中的平台开关依次执行
+node remote-server.js                                   # 人工介入服务（可选，:3456）
 
 # 2. 后台服务
-cd webman && composer install
+cd ../webman
+composer install
 cp .env.example .env
-php start.php start
+php start/start.php start
 ```
 
 ## 配置
